@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ตั้งรหัสผ่านใหม่ | ห้องเรียนดิจิทัล</title>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./style.css">
+<style>.reset-wrap{min-height:90vh;display:grid;place-items:center;padding:25px 15px;background:#eff6ff}.reset-card{max-width:440px;width:100%;background:#fff;border:1px solid #dbe6f6;border-radius:22px;padding:30px;box-shadow:0 20px 40px #0b4c951a}h1{font-size:23px;margin:6px 0 14px}label{display:block;font-size:12px;font-weight:600;margin:14px 0}input{display:block;width:100%;border:1px solid #c9d9ee;border-radius:10px;padding:12px;margin-top:5px}.button{margin-top:12px}.msg{font-size:12px;border-radius:12px;padding:12px;background:#eaf7f0;color:#076a47}.msg.bad{background:#fff0f0;color:#b13142}.muted{font-size:12px;color:#617e9e}.back{display:block;margin-top:16px;color:#1765cf}section[hidden],p[hidden]{display:none!important}</style>
+<script src="./config.js"></script></head>
+<body><main class="reset-wrap"><div class="reset-card">
+<a class="back" href="./">← กลับหน้าเว็บไซต์</a><span class="eyebrow">ACCOUNT RECOVERY</span>
+<section id="request"><h1>ลืมรหัสผ่าน</h1><p class="muted">กรอกอีเมลบัญชีครู เพื่อรับลิงก์ตั้งรหัสผ่านใหม่</p>
+<form id="requestForm"><label>อีเมลบัญชีครู<input type="email" name="email" required autocomplete="email" placeholder="อีเมลที่ใช้สร้างบัญชี"></label>
+<button class="button button-primary button-wide" type="submit">ส่งลิงก์ตั้งรหัสผ่านใหม่</button></form></section>
+<section id="change" hidden><h1>ตั้งรหัสผ่านใหม่</h1><p class="muted">กำหนดรหัสผ่านอย่างน้อย 12 ตัวอักษร</p>
+<form id="changeForm"><label>รหัสผ่านใหม่<input type="password" name="password" minlength="12" required autocomplete="new-password"></label>
+<label>ยืนยันรหัสผ่าน<input type="password" name="again" minlength="12" required autocomplete="new-password"></label>
+<button class="button button-primary button-wide" type="submit">บันทึกรหัสผ่านใหม่</button></form></section>
+<section id="success" hidden><h1>เปลี่ยนรหัสผ่านสำเร็จ</h1><p>กลับไปเว็บไซต์แล้วเข้าสู่ระบบด้วยรหัสผ่านใหม่</p><a class="button button-primary button-wide" href="./">เข้าสู่ระบบครู</a></section>
+<p id="notice" class="msg" role="status" aria-live="polite" hidden></p>
+<p class="muted">อย่าส่งรหัสผ่านให้บุคคลอื่นหรือโพสต์ลงในแชต</p></div></main>
+<script type="module">
+import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.57.0';
+const $=id=>document.getElementById(id);
+const opts=window.APP_CONFIG||{};
+const ok=/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/.test(String(opts.supabaseUrl||''))&&String(opts.publishableKey||'').length>30;
+const tokenWasSent=new URLSearchParams(location.hash.replace(/^#/,'')).get('type')==='recovery';
+const emailLinkError=new URLSearchParams(location.hash.replace(/^#/,'')).get('error_description');
+const client=ok?createClient(opts.supabaseUrl,opts.publishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}):null;
+let canChange=false;
+function show(which){for(const id of ['request','change','success'])$(id).hidden=id!==which;$('notice').hidden=true;}
+function msg(message,error=false){$('notice').hidden=false;$('notice').textContent=message;$('notice').className='msg'+(error?' bad':'');}
+function loading(form,state){for(const el of form.querySelectorAll('input,button'))el.disabled=state;}
+if(!client)msg('ระบบเชื่อมต่อฐานข้อมูลยังไม่พร้อม',true);
+else{
+  client.auth.onAuthStateChange(event=>{if(event==='PASSWORD_RECOVERY'){canChange=true;show('change');}});
+  if(emailLinkError)msg('ลิงก์ไม่ถูกต้องหรือหมดอายุ กรุณาขอลิงก์ใหม่',true);
+  else if(tokenWasSent)client.auth.getSession().then(({data})=>{
+    if(data?.session){canChange=true;show('change');}
+    else msg('ลิงก์ตั้งรหัสผ่านไม่ถูกต้องหรือหมดอายุ กรุณาขอลิงก์ใหม่',true);
+  }).catch(()=>msg('ตรวจสอบลิงก์ไม่สำเร็จ กรุณาขอลิงก์ใหม่',true));
+}
+$('requestForm').addEventListener('submit',async event=>{
+  event.preventDefault();if(!client)return;const form=event.currentTarget;loading(form,true);
+  try{
+    const email=String(new FormData(form).get('email')||'').trim();
+    const {error}=await client.auth.resetPasswordForEmail(email,{redirectTo:'https://netipongmatnariang-stack.github.io/-/teacher/reset.html'});
+    if(error)throw error;
+    msg('หากอีเมลตรงกับบัญชีในระบบ จะมีลิงก์ส่งไปให้ โปรดตรวจสอบกล่องจดหมายและอีเมลขยะ');
+  }catch(err){msg(err?.status===429?'ส่งคำขอถี่เกินไป กรุณาลองใหม่ภายหลัง':'ส่งลิงก์ไม่ได้: '+String(err.message||err),true);}
+  finally{loading(form,false);}
+});
+$('changeForm').addEventListener('submit',async event=>{
+  event.preventDefault();if(!client||!canChange)return;const form=event.currentTarget;
+  const fd=new FormData(form),pass=String(fd.get('password')||''),again=String(fd.get('again')||'');
+  if(pass.length<12)return msg('รหัสผ่านต้องยาวอย่างน้อย 12 ตัวอักษร',true);
+  if(pass!==again)return msg('รหัสผ่านสองช่องไม่ตรงกัน',true);
+  loading(form,true);
+  try{
+    const {error}=await client.auth.updateUser({password:pass});
+    if(error)throw error;
+    await client.auth.signOut();canChange=false;
+    history.replaceState(null,'',location.pathname);
+    form.reset();show('success');
+  }catch(err){msg('บันทึกรหัสผ่านไม่ได้: '+String(err.message||err),true);}
+  finally{loading(form,false);}
+});
+</script></body></html>
