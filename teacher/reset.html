@@ -6,7 +6,7 @@
 <style>.reset-wrap{min-height:90vh;display:grid;place-items:center;padding:25px 15px;background:#eff6ff}.reset-card{max-width:440px;width:100%;background:#fff;border:1px solid #dbe6f6;border-radius:22px;padding:30px;box-shadow:0 20px 40px #0b4c951a}h1{font-size:23px;margin:6px 0 14px}label{display:block;font-size:12px;font-weight:600;margin:14px 0}input{display:block;width:100%;border:1px solid #c9d9ee;border-radius:10px;padding:12px;margin-top:5px}.button{margin-top:12px}.msg{font-size:12px;border-radius:12px;padding:12px;background:#eaf7f0;color:#076a47}.msg.bad{background:#fff0f0;color:#b13142}.muted{font-size:12px;color:#617e9e}.back{display:block;margin-top:16px;color:#1765cf}section[hidden],p[hidden]{display:none!important}</style>
 <script src="./config.js"></script></head>
 <body><main class="reset-wrap"><div class="reset-card">
-<a class="back" href="./">← กลับหน้าเว็บไซต์</a><span class="eyebrow">ACCOUNT RECOVERY</span>
+<a class="back" href="../nexedu/">← กลับ NEX EDU</a><span class="eyebrow">ACCOUNT RECOVERY</span>
 <section id="checking"><h1>กำลังตรวจสอบลิงก์</h1><p class="muted">ระบบกำลังยืนยันสิทธิ์จากอีเมลเพื่อเปิดแบบฟอร์มตั้งรหัสผ่านใหม่</p></section>
 <section id="request" hidden><h1>ลืมรหัสผ่าน</h1><p class="muted">กรอกอีเมลบัญชีครู เพื่อรับลิงก์ตั้งรหัสผ่านใหม่</p>
 <p class="muted">หากกดลิงก์จากอีเมลแล้วกลับมาเห็นช่องกรอกอีเมลอีก แสดงว่าหน้านี้ไม่ได้รับข้อมูลยืนยันหรือข้อมูลหมดอายุ โปรดตรวจสอบ <a href="https://supabase.com/dashboard/project/jddcjezawvpnlnhhnlbq/auth/url-configuration" target="_blank" rel="noopener noreferrer">Supabase → URL Configuration</a> และขอลิงก์ใหม่</p>
@@ -16,7 +16,7 @@
 <form id="changeForm"><label>รหัสผ่านใหม่<input type="password" name="password" minlength="12" required autocomplete="new-password"></label>
 <label>ยืนยันรหัสผ่าน<input type="password" name="again" minlength="12" required autocomplete="new-password"></label>
 <button class="button button-primary button-wide" type="submit">บันทึกรหัสผ่านใหม่</button></form></section>
-<section id="success" hidden><h1>เปลี่ยนรหัสผ่านสำเร็จ</h1><p>กลับไปเว็บไซต์แล้วเข้าสู่ระบบด้วยรหัสผ่านใหม่</p><a class="button button-primary button-wide" href="./">เข้าสู่ระบบครู</a></section>
+<section id="success" hidden><h1>เปลี่ยนรหัสผ่านสำเร็จ</h1><p>กลับไปเว็บไซต์แล้วเข้าสู่ระบบด้วยรหัสผ่านใหม่</p><a class="button button-primary button-wide" href="../nexedu/">เข้าสู่ระบบ NEX EDU</a></section>
 <p id="notice" class="msg" role="status" aria-live="polite" hidden></p>
 <p class="muted">อย่าส่งรหัสผ่านให้บุคคลอื่นหรือโพสต์ลงในแชต</p></div></main>
 <script type="module">
