@@ -156,18 +156,19 @@ async function refreshProtected(){
  const [classes,students,assessments]=await Promise.all([
   allRows('school_classes','id,name','name'),
   allRows('students','id,class_id,student_no,full_name','id'),
-  allRows('assessments','id,class_id,title,category,max_score,assessment_date,details','assessment_date')
+  allRows('assessments','id,class_id,subject_id,title,category,max_score,assessment_date,details','assessment_date')
  ]);
  s.classes=classes;s.students=students;s.assessments=assessments;
  if(!classes.some(c=>c.id===s.classId))s.classId=classes[0]?.id||'';
  if(s.studentClass!=='all'&&!classes.some(c=>c.id===s.studentClass))s.studentClass='all';
  if(s.currentAssessment&&!assessments.some(a=>a.id===s.currentAssessment))s.currentAssessment=null;
  if(admin()){
-  const [ws,an]=await Promise.all([
-   allRows('worksheets','id,title,description,subject,grade_label,file_path,external_url,is_published,created_at','created_at'),
-   allRows('teacher_announcements','id,title,body,is_published,created_at','created_at')
+  const [ws,an,subjects]=await Promise.all([
+   allRows('worksheets','id,title,description,subject,subject_id,grade_label,file_path,external_url,is_published,created_at','created_at'),
+   allRows('teacher_announcements','id,title,body,is_published,created_at','created_at'),
+    allRows('teacher_subjects','id,name,subject_code,description,is_active,sort_order','sort_order')
   ]);
-  s.worksheets=ws.reverse();s.announcements=an.reverse();
+  s.worksheets=ws.reverse();s.announcements=an.reverse();s.subjects=subjects.sort((a,b)=>a.sort_order-b.sort_order||a.name.localeCompare(b.name,'th'));
  }
 }
 async function enterAdmin(){
@@ -181,7 +182,7 @@ async function enterAdmin(){
 }
 function setAdminTab(tab){
  if(!ADMIN_TITLES[tab])return;
- if(['worksheets','announcements','settings'].includes(tab)&&!admin())return;
+ if(['worksheets','subjects','announcements','settings'].includes(tab)&&!admin())return;
  s.tab=tab;$('adminTitle').textContent=ADMIN_TITLES[tab];
  document.querySelectorAll('.side-btn').forEach(x=>x.classList.toggle('active',x.dataset.adminView===tab));
  if(tab==='overview')renderOverview();
@@ -189,6 +190,7 @@ function setAdminTab(tab){
  if(tab==='students')renderStudents();
  if(tab==='assessments')renderAssessments();
  if(tab==='worksheets')renderWorksheetManager();
+ if(tab==='subjects')renderSubjectManager();
  if(tab==='announcements')renderAnnouncementManager();
  if(tab==='settings')renderSiteSettings();
 }
@@ -200,7 +202,7 @@ function renderOverview(){
  '<div class="admin-panel"><div class="panel-head"><h2>เมนูลัด</h2></div><div class="row-actions">'+
  smallButton('go-assessments','▤ ประเมินและบันทึกคะแนน','primary')+
  smallButton('go-students','♙ จัดการรายชื่อ')+
- (admin()?smallButton('go-worksheets','◈ เพิ่มใบงาน'):'')+'</div>'+
+ (admin()?smallButton('go-worksheets','◈ เพิ่มใบงาน')+smallButton('go-subjects','+ จัดการรายวิชา'):'')+'</div>'+
  '<div class="info-callout">ข้อมูลรายบุคคลและคะแนนจะแสดงเฉพาะผู้ที่ลงชื่อเข้าใช้และมีสิทธิ์ในชั้นเรียนเท่านั้น</div></div></div>';
 }
 async function loadAttendance(){
@@ -272,7 +274,7 @@ function renderStudents(){
 function renderAssessments(){
  const list=s.assessments.filter(a=>!s.classId||a.class_id===s.classId)
   .sort((a,b)=>b.assessment_date.localeCompare(a.assessment_date));
- const items=list.map(a=>'<div class="card-management"><div><h3>'+h(a.title)+'</h3><p>'+h(className(a.class_id))+' · '+h(CATEGORIES[a.category])+' · '+h(thDate(a.assessment_date))+' · คะแนนเต็ม '+h(a.max_score)+'</p></div>'+
+ const items=list.map(a=>'<div class="card-management"><div><h3>'+h(a.title)+'</h3><p>'+h(className(a.class_id))+' · '+h(subjectById(a.subject_id)?.name||'ไม่ระบุรายวิชา')+' · '+h(CATEGORIES[a.category])+' · '+h(thDate(a.assessment_date))+' · คะแนนเต็ม '+h(a.max_score)+'</p></div>'+
  '<div class="row-actions">'+smallButton('open-scores','ให้คะแนน','primary','data-id="'+h(a.id)+'"')+
  smallButton('edit-assessment','แก้ไข','outline','data-id="'+h(a.id)+'"')+
  smallButton('delete-assessment','ลบ','danger','data-id="'+h(a.id)+'"')+'</div></div>').join('');
@@ -332,7 +334,7 @@ async function removeScore(stId){
 }
 function renderWorksheetManager(){
  if(!admin())return;
- const rows=s.worksheets.map(w=>'<div class="card-management"><div><h3>'+h(w.title)+'</h3><p>'+h(w.grade_label||'ทุกระดับ')+' · '+h(w.subject||'ทั่วไป')+' · '+(w.is_published?'เผยแพร่':'ฉบับร่าง')+'</p></div><div class="row-actions">'+
+ const rows=s.worksheets.map(w=>'<div class="card-management"><div><h3>'+h(w.title)+'</h3><p>'+h(w.grade_label||'ทุกระดับ')+' · '+h(subjectName(w))+' · '+(w.is_published?'เผยแพร่':'ฉบับร่าง')+'</p></div><div class="row-actions">'+
  smallButton('edit-worksheet','แก้ไข','outline','data-id="'+h(w.id)+'"')+
  smallButton('remove-worksheet','ลบ','danger','data-id="'+h(w.id)+'"')+
  (w.is_published?'<span class="tag green">เผยแพร่</span>':'<span class="tag yellow">ฉบับร่าง</span>')+'</div></div>').join('');
@@ -580,6 +582,9 @@ async function handleAction(el){
  if(act==='delete-score')await removeScore(id);
  if(act==='close-scores'){s.currentAssessment=null;renderAssessments();}
  if(act==='score-export')exportScores();
+ if(act==='new-subject')subjectModal();
+ if(act==='edit-subject')subjectModal(id);
+ if(act==='delete-subject')await deleteSubject(id);
  if(act==='new-worksheet')worksheetModal();
  if(act==='edit-worksheet')worksheetModal(id);
  if(act==='remove-worksheet')await removeWorksheet(id);
