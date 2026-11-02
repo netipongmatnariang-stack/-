@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="th"><head><meta charset="utf-8"><base href="../teacher/"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#082756"><meta name="description" content="NEX EDU | Teacher Smart Portal ศูนย์จัดการเรียนรู้ เช็คชื่อ สมุดคะแนน และแฟ้มประเมิน วPA ของครูเนติพงษ์">
+<link rel="canonical" href="https://netipongmatnariang-stack.github.io/-/nexedu/">
+<meta property="og:title" content="NEX EDU | Teacher Smart Portal">
+<meta property="og:description" content="แพลตฟอร์มการจัดการเรียนการสอนสำหรับครู">
+<title>NEX EDU | Teacher Smart Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./style.css">
+<style>
+:root{font-family:'Prompt',sans-serif;color:#142f56}
+body{background:#f2f6fd;min-height:100vh;margin:0}
+*:focus-visible{outline:3px solid #36b8ff;outline-offset:2px}
+.studio-head{background:linear-gradient(105deg,#071f46,#1058a0 78%,#13a5dc);color:white;padding:16px max(18px,calc((100vw - 1250px)/2));display:flex;justify-content:space-between;align-items:center;gap:12px}
+.studio-head a{color:#fff;text-decoration:none}
+.brand-small{font-size:11px;opacity:.8}.studio-head h1{font-size:19px;font-weight:700;margin:0}
+.studio-nav{display:flex;gap:7px;flex-wrap:wrap;margin:0 auto;padding:16px 15px;max-width:1270px}
+.studio-nav button{font:inherit;padding:10px 13px;background:#fff;color:#1e5188;border:1px solid #d6e4f4;border-radius:12px;cursor:pointer;font-size:12px;font-weight:600}
+.studio-nav button.active{background:#0b5aaf;color:#fff;border-color:#0b5aaf}
+.studio-main{max-width:1270px;margin:0 auto;padding:0 15px 70px}
+.panel{background:#fff;border:1px solid #dfebf7;box-shadow:0 7px 35px #103b6810;border-radius:18px;padding:21px;margin:14px 0}
+.panel h2{font-size:19px;color:#153c75;margin:0 0 12px}.panel h3{font-size:15px;color:#143e75;margin:0 0 6px}
+.muted{font-size:12px;color:#607893}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.split{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.card-mini{background:#f5f9ff;border:1px solid #dce9f8;border-radius:13px;padding:15px}.card-mini strong{font-size:21px;display:block;color:#0c59b1}
+.table-scroll{overflow:auto}.data{width:100%;border-collapse:collapse;font-size:12px}.data th,.data td{padding:11px 10px;border-bottom:1px solid #e3ebf5;text-align:left;vertical-align:middle}.data th{color:#415d78;background:#f6f9fd}.data input,.data select{min-width:100px}
+.act{font:inherit;font-weight:600;cursor:pointer;background:#eaf2ff;color:#1258ac;border:1px solid #cfdef3;padding:8px 11px;border-radius:9px;font-size:12px}
+.act.primary{background:#155cbb;color:#fff;border-color:#155cbb}.act.danger{background:#fff2f3;color:#af3146;border-color:#f4c5cc}
+.act:disabled{opacity:.6;cursor:not-allowed}
+label{display:block;font-size:12px;color:#254666;font-weight:600;margin:10px 0 5px}
+.in,select,textarea{font:inherit;font-size:13px;border:1px solid #cbdbee;background:#fff;border-radius:9px;padding:10px;max-width:100%;min-height:41px}
+label>.in,label>select,label>textarea{display:block;width:100%}
+textarea{min-height:88px;resize:vertical}
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0}
+.toolbar label{margin:0}.toolbar select,.toolbar input{min-width:150px}
+.tip{background:#eaf3ff;border-left:3px solid #39a4de;padding:12px;margin:12px 0;border-radius:8px;font-size:12px;color:#245a87}
+.error{background:#fff0f1;color:#aa2940;border-radius:10px;padding:12px;margin:10px 0}
+.success{background:#eaf9ee;color:#167149;border-radius:10px;padding:12px;margin:10px 0}
+.studio-dialog{border:none;border-radius:19px;box-shadow:0 20px 90px #06183675;padding:0;width:min(560px,92vw);max-height:88vh;overflow:auto}
+.studio-dialog::backdrop{background:#061a366e}.dialog-inside{padding:24px}.dialog-inside h2{font-size:20px;color:#1e4376;margin:0}
+.item{padding:12px;border:1px solid #e0eaf7;background:#fff;border-radius:13px;margin-bottom:10px}
+.item p{margin:6px 0}.pill{font-size:11px;background:#e7f2ff;color:#2067b7;border-radius:50px;padding:3px 9px}
+.progress{height:10px;border-radius:8px;overflow:hidden;background:#e0eaf6}.bar{height:100%;background:linear-gradient(90deg,#138bd7,#1cbca4)}
+@media(max-width:600px){.studio-head{flex-wrap:wrap}.panel{padding:14px}.data{font-size:11px}.studio-nav button{padding:8px 9px;font-size:11px}}
+@media print{
+ body{background:#fff;color:#000;font-size:11pt}
+ .studio-head,.studio-nav,.studio-dialog,#message,.act,.studio-main>nav{display:none!important}
+ .studio-main{max-width:100%;margin:0;padding:0}
+ .panel{border:0;border-radius:0;box-shadow:none;padding:6px 0;margin:6px 0;break-inside:avoid}
+ .split{display:block}
+ .panel h2{color:#000;font-size:14pt}
+ .muted{color:#333}
+ .info,.tip{background:#fff;border:1px solid #ccc}
+ @page{size:A4;margin:14mm}
+}
+</style>
+<script src="./config.js"></script><script type="module" src="./studio.js"></script>
+</head><body>
+<!-- Shared teacher/ assets via <base> preserve existing authentication, data and features while keeping /nexedu/ as the visible URL. -->
+<header class="studio-head"><div><a href="./"><span class="brand-small">✳ NEX EDU · TEACHER SMART PORTAL</span><h1>NEX EDU | ศูนย์จัดการเรียนรู้</h1></a></div>
+<div class="row"><span class="brand-small" id="who">กำลังตรวจสอบบัญชี...</span><a href="./">หน้าเว็บไซต์</a><a href="./student.html">สำหรับนักเรียน</a><button id="signOut" class="act" hidden>ออกจากระบบ</button></div></header>
+<section id="loginArea" class="studio-main" hidden><div class="panel" style="max-width:430px;margin:55px auto">
+<h2>เข้าสู่ระบบครู</h2><p class="muted">ใช้บัญชีครูหรือ Admin ที่มีอยู่ใน Supabase</p>
+<form id="loginForm"><label>อีเมล<input class="in" type="email" name="email" autocomplete="username" required></label>
+<label>รหัสผ่าน<input class="in" type="password" name="password" autocomplete="current-password" required></label><p class="error" id="loginError" hidden></p>
+<button class="act primary" type="submit">เข้าสู่ระบบ</button>
+<a class="act" href="./reset.html">ลืมรหัสผ่าน</a></form></div></section>
+<section id="studioArea" hidden><nav class="studio-nav" id="tabs">
+<button data-tab="overview">ภาพรวม</button><button data-tab="courses">รายวิชา/ชั้นเรียน</button>
+<button data-tab="sessions">เช็คชื่อรายคาบ</button><button data-tab="tasks">การบ้านและตรวจงาน</button>
+<button data-tab="grades">สมุดคะแนน</button><button data-tab="students">นักเรียน</button>
+<button data-tab="pa">แฟ้ม วPA</button><button data-tab="portfolio">ผลงาน/ภาพ/วิดีโอ</button></nav>
+<main class="studio-main"><div id="message" role="status" aria-live="polite" hidden></div><div id="view"></div></main></section>
+<dialog id="editor" class="studio-dialog"><form method="dialog" id="editForm" class="dialog-inside">
+<h2 id="editorTitle"></h2><div id="editorFields"></div><p id="editorError" class="error" hidden></p>
+<div class="toolbar" style="justify-content:flex-end"><button class="act" id="cancelEditor" type="button">ยกเลิก</button>
+<button class="act primary" id="saveEditor" type="submit">บันทึกข้อมูล</button></div></form></dialog>
+</body></html>
