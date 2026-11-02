@@ -163,7 +163,7 @@ function sessionPage(){
  const total=held.length;
  const weighted=(byStatus.present||0)+(byStatus.late||0)*Number(currentSection().late_weight)+(byStatus.sick+byStatus.personal)*Number(currentSection().leave_weight);
  const percent=total>0?Math.round(weighted/total*10000)/100:0;
- return '<tr><td>'+h(st.student_no)+'</td><td>'+h(st.full_name)+'</td><td>'+total+'</td><td>'+byStatus.present+'</td><td>'+byStatus.absent+'</td><td>'+byStatus.late+'</td><td>'+byStatus.sick+byStatus.personal+'</td><td><strong style="color:'+(total&&percent<Number(currentSection().minimum_attendance)?'#c44b4b':'#0f725c')+'">'+(total?percent+'%':'-')+'</strong></td></tr>';
+ return '<tr><td>'+h(st.student_no)+'</td><td>'+h(st.full_name)+'</td><td>'+total+'</td><td>'+byStatus.present+'</td><td>'+byStatus.absent+'</td><td>'+byStatus.late+'</td><td>'+(byStatus.sick+byStatus.personal)+'</td><td><strong style="color:'+(total&&percent<Number(currentSection().minimum_attendance)?'#c44b4b':'#0f725c')+'">'+(total?percent+'%':'-')+'</strong></td></tr>';
  }).join('');
  const open=S.sessions.filter(x=>x.section_id===S.courseId).sort((a,b)=>b.session_date.localeCompare(a.session_date)||b.period_no-a.period_no);
  $('view').innerHTML=chooseCourse()+'<div class="panel">'+head('เช็คชื่อรายคาบ',btn('add-session','+ เพิ่มคาบเรียน','','primary'))+
