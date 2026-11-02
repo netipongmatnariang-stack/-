@@ -1,0 +1,46 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b3568"><title>Student Portal | ห้องเรียนดิจิทัล</title>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Prompt,sans-serif;background:#f1f7ff;color:#14375e}
+header{background:linear-gradient(110deg,#081e4c,#0977c2);color:#fff;padding:20px 5vw;display:flex;align-items:center;gap:20px;justify-content:space-between}
+header h1{font-size:19px;margin:3px 0}a{color:#135ea8}
+header a{color:white;text-decoration:none;font-size:12px}
+main{max-width:1120px;margin:25px auto;padding:0 15px 80px}
+section.panel{background:white;padding:20px;border:1px solid #d9e8f6;border-radius:18px;margin:16px 0;box-shadow:0 6px 25px #123d6210}
+h2{font-size:18px;color:#154f91;margin:0 0 14px}h3{font-size:14px;margin:8px 0}
+small,.muted{color:#647f9b;font-size:12px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.card{border:1px solid #e2ebf6;padding:17px;border-radius:14px;background:#fafdff}
+.bar{height:9px;background:#dbe8f5;border-radius:8px;overflow:hidden}.bar>div{height:100%;background:#11a6b2}
+.btn{border:1px solid #d5e4f5;background:#fff;color:#0d5dad;padding:9px 13px;border-radius:9px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.btn.primary{background:#086ec7;color:#fff;border-color:#086ec7}
+label{font-size:12px;font-weight:500;display:block;margin:10px 0}
+input,textarea{font:inherit;width:100%;border-radius:9px;border:1px solid #cbddee;padding:11px;min-height:40px;margin-top:4px}
+textarea{min-height:75px}
+.tbl{width:100%;border-collapse:collapse;font-size:12px}.tbl td,.tbl th{padding:11px;text-align:left;border-bottom:1px solid #e3edf7}
+.scroll{overflow-x:auto}.err{color:#aa3443;background:#fff0f2;padding:12px;border-radius:9px}.success{color:#106d50;background:#ebf9f2;padding:12px;border-radius:9px}
+.status{padding:4px 10px;border-radius:30px;background:#e9f3ff;color:#1d66aa;font-size:11px}
+.hidden,[hidden]{display:none!important}
+nav{display:flex;gap:7px;flex-wrap:wrap;margin:15px 0}nav button.active{background:#0b61b8;color:#fff}
+@media(max-width:600px){header{flex-wrap:wrap}.tbl{font-size:11px}section.panel{padding:14px}}
+</style><script src="./config.js"></script><script type="module" src="./student.js"></script></head>
+<body><header><div><small style="color:#cce7fc">✳ TEACHER SMART PORTAL</small><h1>พื้นที่นักเรียน · Student Dashboard</h1></div>
+<div><a href="./">← เว็บไซต์หลัก</a> <button id="logout" class="btn" hidden>ออกจากระบบ</button></div></header>
+<main>
+<section class="panel" id="loginPanel" hidden style="max-width:450px;margin:40px auto"><h2>เข้าสู่ระบบนักเรียน</h2>
+<p class="muted">ใช้บัญชีที่ครูเชื่อมโยงกับข้อมูลนักเรียนของคุณเท่านั้น</p>
+<form id="loginForm"><label>อีเมล<input type="email" required name="email" autocomplete="username"></label>
+<label>รหัสผ่าน<input type="password" required name="password" autocomplete="current-password"></label>
+<p id="loginError" class="err" hidden></p><button class="btn primary" type="submit">เข้าสู่ระบบนักเรียน</button>
+<a class="btn" href="./reset.html">ลืมรหัสผ่าน</a></form></section>
+<section class="panel" id="notLinked" hidden><h2>ยังไม่ได้เชื่อมบัญชีนักเรียน</h2>
+<p>บัญชีนี้ยังไม่ผูกกับรายชื่อนักเรียนในระบบ กรุณาให้ครูผู้ดูแลตรวจสอบที่เมนู <strong>จัดการนักเรียน → เชื่อมบัญชีนักเรียน</strong> โดยใช้ User UID จาก Supabase Auth</p>
+<button class="btn" id="notLinkedSignOut">ออกจากระบบ</button></section>
+<div id="portal" hidden><section class="panel"><h2>ข้อมูลของฉัน</h2><div id="studentInfo"></div></section>
+<nav id="tabs"><button class="btn active" data-tab="courses">รายวิชา/เวลาเรียน</button>
+<button class="btn" data-tab="assignments">งานที่ได้รับ/ส่งงาน</button>
+<button class="btn" data-tab="scores">คะแนนของฉัน</button></nav>
+<div id="content"></div></div>
+<p id="status" class="success" hidden aria-live="polite"></p></main>
+</body></html>
