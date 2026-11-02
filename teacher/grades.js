@@ -106,7 +106,7 @@ async function init(){
   await refresh();
   $('login').hidden=true;$('content').hidden=false;
   if(!state.sections.length){
-   $('categories').innerHTML='<h2>ยังไม่มีรายวิชาที่เปิดสอน</h2><p class="info">เพิ่มห้องเรียนและเปิดสอนรายวิชาใน Teacher Smart Portal ก่อนใช้สมุดคะแนน</p><p><a href="./studio.html">กลับไปจัดการรายวิชา</a></p>';
+   $('categories').innerHTML='<h2>ยังไม่มีรายวิชาที่เปิดสอน</h2><p class="info">เพิ่มห้องเรียนและเปิดสอนรายวิชาใน Teacher Smart Portal ก่อนใช้สมุดคะแนน</p><p><a href="../nexedu/">กลับไปจัดการรายวิชา NEX EDU</a></p>';
    $('gradeTable').hidden=true;$('courseSelect').disabled=true;
    return;
   }
