@@ -21,9 +21,15 @@ const tick=(key,label,val=false)=>'<label style="display:flex;gap:9px;align-item
 function note(message,bad=false){const el=$('message');el.textContent=message;el.className=bad?'error':'success';el.hidden=false;el.scrollIntoView({behavior:'smooth',block:'nearest'});}
 function errorMessage(e){if(e?.code==='23505')return 'มีข้อมูลนี้อยู่แล้ว';if(e?.code==='23503')return 'รายการนี้มีข้อมูลที่เชื่อมโยงอยู่';return e?.message||String(e);}
 async function query(table,cols='*',sort=null){
- let r=db.from(table).select(cols);
- if(sort)r=r.order(sort);
- const {data,error}=await r.limit(1000);if(error)throw error;return data||[];
+ const out=[];
+ const sortKey=sort||(table==='assignment_reviews'?'submission_id':'id');
+ for(let start=0;start<50000;start+=500){
+  const {data,error}=await db.from(table).select(cols).order(sortKey).range(start,start+499);
+  if(error)throw error;
+  out.push(...(data||[]));
+  if((data||[]).length<500)return out;
+ }
+ throw Error('ข้อมูลมีมากเกินขอบเขต 50,000 รายการ กรุณาแบ่งช่วงข้อมูลก่อนประมวลผล');
 }
 async function write(table,values,id){const q=db.from(table);const {error}=await(id?q.update(values).eq('id',id):q.insert(values));if(error)throw error;}
 async function del(table,id){const {error}=await db.from(table).delete().eq('id',id);if(error)throw error;}
