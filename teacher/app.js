@@ -158,7 +158,7 @@ async function refreshProtected(){
  const [classes,students,assessments]=await Promise.all([
   allRows('school_classes','id,name','name'),
   allRows('students','id,class_id,student_no,full_name','id'),
-  allRows('assessments','id,class_id,subject_id,title,category,max_score,assessment_date,details','assessment_date')
+  allRows('assessments','id,class_id,subject_id,title,category,max_score,assessment_date,details,is_published','assessment_date')
  ]);
  s.classes=classes;s.students=students;s.assessments=assessments;
  if(!classes.some(c=>c.id===s.classId))s.classId=classes[0]?.id||'';
@@ -276,7 +276,7 @@ function renderStudents(){
 function renderAssessments(){
  const list=s.assessments.filter(a=>!s.classId||a.class_id===s.classId)
   .sort((a,b)=>b.assessment_date.localeCompare(a.assessment_date));
- const items=list.map(a=>'<div class="card-management"><div><h3>'+h(a.title)+'</h3><p>'+h(className(a.class_id))+' · '+h(subjectById(a.subject_id)?.name||'ไม่ระบุรายวิชา')+' · '+h(CATEGORIES[a.category])+' · '+h(thDate(a.assessment_date))+' · คะแนนเต็ม '+h(a.max_score)+'</p></div>'+
+ const items=list.map(a=>'<div class="card-management"><div><h3>'+h(a.title)+'</h3><p>'+h(className(a.class_id))+' · '+h(subjectById(a.subject_id)?.name||'ไม่ระบุรายวิชา')+' · '+(a.is_published?'คะแนนที่เผยแพร่':'คะแนนส่วนตัว')+' · '+h(CATEGORIES[a.category])+' · '+h(thDate(a.assessment_date))+' · คะแนนเต็ม '+h(a.max_score)+'</p></div>'+
  '<div class="row-actions">'+smallButton('open-scores','ให้คะแนน','primary','data-id="'+h(a.id)+'"')+
  smallButton('edit-assessment','แก้ไข','outline','data-id="'+h(a.id)+'"')+
  smallButton('delete-assessment','ลบ','danger','data-id="'+h(a.id)+'"')+'</div></div>').join('');
@@ -451,11 +451,12 @@ function assessmentModal(id){
   selectField('category','ประเภท',Object.entries(CATEGORIES),old?.category||'worksheet')+
   inputField('max_score','คะแนนเต็ม',old?.max_score||10,'number',true,'min="0.01" max="10000" step="0.01"')+
   inputField('assessment_date','วันที่ประเมิน',old?.assessment_date||isoLocal(new Date()),'date',true)+
-  textareaField('details','รายละเอียด',old?.details||'','maxlength="1000"'),async f=>{
+  textareaField('details','รายละเอียด',old?.details||'','maxlength="1000"')+
+  checkboxField('is_published','เผยแพร่คะแนนให้นักเรียนเห็น',old?.is_published??false),async f=>{
    const max=Number(f.get('max_score'));
    if(!Number.isFinite(max)||max<=0||max>10000)throw Error('คะแนนเต็มต้องมากกว่า 0 และไม่เกิน 10,000');
    const val={class_id:String(f.get('class_id')),subject_id:String(f.get('subject_id')||'')||null,title:String(f.get('title')).trim(),category:String(f.get('category')),
-     max_score:max,assessment_date:String(f.get('assessment_date')),details:String(f.get('details')).trim()};
+     max_score:max,assessment_date:String(f.get('assessment_date')),details:String(f.get('details')).trim(),is_published:f.get('is_published')==='on'};
    if(!val.title)throw Error('กรอกชื่อกิจกรรม');
    const {error}=await (old?db.from('assessments').update(val).eq('id',old.id):db.from('assessments').insert(val));
    if(error)throw error;
