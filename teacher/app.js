@@ -106,7 +106,9 @@ function publicHome(){
    ['▤','ใบงานและแบบฝึก','ดาวน์โหลดใบงานเพื่อฝึกทักษะทบทวนความรู้'],
    ['✦','AI และเทคโนโลยี','สร้างสรรค์ผลงานและเรียนรู้เทคโนโลยีอนาคต']
   ].map(a=>'<div class="feature-card"><div class="feature-icon">'+a[0]+'</div><h3>'+a[1]+'</h3><p>'+a[2]+'</p></div>').join('')+'</div></div></section>'+
-  '<section class="section section-soft"><div class="public-container"><div class="section-head"><div><span class="eyebrow">LEARNING RESOURCES</span><h2>ใบงานล่าสุด</h2><p class="muted">สื่อการเรียนรู้ที่เปิดให้นักเรียนใช้งาน</p></div>'+
+  '<section class="section"><div class="public-container"><div class="section-head"><div><span class="eyebrow">SUBJECTS</span><h2>รายวิชาที่เปิดสอน</h2></div><button class="button button-outline" data-view="subjects">ดูรายวิชาทั้งหมด →</button></div><div class="features">'+
+   (s.publicSubjects.length?s.publicSubjects.slice(0,4).map(x=>'<article class="feature-card"><div class="feature-icon">◈</div><h3>'+h(x.name)+'</h3><p>'+h(x.description||x.subject_code||'กิจกรรมการเรียนรู้')+'</p><button class="button button-outline button-small" data-action="open-subject" data-id="'+h(x.id)+'">ดูใบงาน →</button></article>').join(''):empty('ยังไม่มีรายวิชา','ผู้ดูแลสามารถเพิ่มรายวิชาได้จากหลังบ้าน'))+'</div></div></section>'+
+   '<section class="section section-soft"><div class="public-container"><div class="section-head"><div><span class="eyebrow">LEARNING RESOURCES</span><h2>ใบงานล่าสุด</h2><p class="muted">สื่อการเรียนรู้ที่เปิดให้นักเรียนใช้งาน</p></div>'+
   '<button class="button button-outline" data-view="worksheets">ดูทั้งหมด →</button></div><div class="worksheets-grid">'+(list.length?list.map(worksheetCard).join(''):empty('ยังไม่มีใบงานเผยแพร่','ครูสามารถเพิ่มใบงานได้ในระบบหลังบ้าน'))+'</div></div></section>'+
   '<section class="section"><div class="public-container"><div class="section-head"><div><span class="eyebrow">UPDATES</span><h2>ข่าวสารและประกาศ</h2></div><button class="button button-outline" data-view="announcements">ดูทั้งหมด →</button></div>'+
   '<div class="news-grid">'+(news.length?news.map(newsCard).join(''):empty('ยังไม่มีข่าวสาร','ติดตามกิจกรรมและประกาศได้ที่นี่'))+'</div></div></section>';
@@ -413,8 +415,8 @@ function inputField(name,label,value='',type='text',required=true,extra=''){
 function textareaField(name,label,value='',extra=''){
  return '<label>'+h(label)+'<textarea class="control" name="'+h(name)+'" '+extra+'>'+h(value)+'</textarea></label>';
 }
-function selectField(name,label,options,value){
- return '<label>'+h(label)+'<select class="control" name="'+h(name)+'" required>'+options.map(([v,t])=>
+function selectField(name,label,options,value,required=true){
+ return '<label>'+h(label)+'<select class="control" name="'+h(name)+'"'+(required?' required':'')+'>'+options.map(([v,t])=>
  '<option value="'+h(v)+'"'+(String(value)===String(v)?' selected':'')+'>'+h(t)+'</option>').join('')+'</select></label>';
 }
 function checkboxField(name,label,value){return '<label class="check-label"><input name="'+h(name)+'" type="checkbox" '+(value?'checked':'')+'>'+h(label)+'</label>';}
@@ -444,7 +446,7 @@ function assessmentModal(id){
  if(!s.classes.length)return toast('กรุณาสร้างชั้นเรียนก่อน',true);
  modal(old?'แก้ไขแบบประเมิน':'สร้างกิจกรรมประเมิน',
   selectField('class_id','ชั้นเรียน',s.classes.map(c=>[c.id,c.name]),old?.class_id||s.classId)+
-  selectField('subject_id','รายวิชา',subjectOptions(old?.subject_id||''),old?.subject_id||'')+
+  selectField('subject_id','รายวิชา',subjectOptions(old?.subject_id||''),old?.subject_id||(s.publicSubjects[0]?.id||''),false)+
   inputField('title','ชื่อกิจกรรม/แบบประเมิน',old?.title||'','text',true,'maxlength="200"')+
   selectField('category','ประเภท',Object.entries(CATEGORIES),old?.category||'worksheet')+
   inputField('max_score','คะแนนเต็ม',old?.max_score||10,'number',true,'min="0.01" max="10000" step="0.01"')+
@@ -466,7 +468,7 @@ function worksheetModal(id){
  modal(old?'แก้ไขใบงาน':'เพิ่มใบงาน',
   inputField('title','ชื่อใบงาน',old?.title||'','text',true,'maxlength="240"')+
   textareaField('description','รายละเอียดใบงาน',old?.description||'','maxlength="3000"')+
-  selectField('subject_id','รายวิชา',subjectOptions(old?.subject_id||''),old?.subject_id||'')+
+  selectField('subject_id','รายวิชา',subjectOptions(old?.subject_id||''),old?.subject_id||(s.publicSubjects[0]?.id||''),false)+
   inputField('grade_label','ระดับชั้น เช่น ป.5',old?.grade_label||'','text',false,'maxlength="100"')+
   '<label>เลือกไฟล์ใบงาน (PDF, DOCX, JPG, PNG สูงสุด 10 MB)<input type="file" class="control" name="file" accept=".pdf,.docx,.png,.jpg,.jpeg"></label>'+
   inputField('external_url','หรือใส่ลิงก์ HTTPS',old?.external_url||'','url',false,'placeholder="https://"')+
