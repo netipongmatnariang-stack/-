@@ -7,7 +7,9 @@
 <script src="./config.js"></script></head>
 <body><main class="reset-wrap"><div class="reset-card">
 <a class="back" href="./">← กลับหน้าเว็บไซต์</a><span class="eyebrow">ACCOUNT RECOVERY</span>
-<section id="request"><h1>ลืมรหัสผ่าน</h1><p class="muted">กรอกอีเมลบัญชีครู เพื่อรับลิงก์ตั้งรหัสผ่านใหม่</p>
+<section id="checking"><h1>กำลังตรวจสอบลิงก์</h1><p class="muted">ระบบกำลังยืนยันสิทธิ์จากอีเมลเพื่อเปิดแบบฟอร์มตั้งรหัสผ่านใหม่</p></section>
+<section id="request" hidden><h1>ลืมรหัสผ่าน</h1><p class="muted">กรอกอีเมลบัญชีครู เพื่อรับลิงก์ตั้งรหัสผ่านใหม่</p>
+<p class="muted">หากกดลิงก์จากอีเมลแล้วกลับมาเห็นช่องกรอกอีเมลอีก แสดงว่าหน้านี้ไม่ได้รับข้อมูลยืนยันหรือข้อมูลหมดอายุ โปรดตรวจสอบ <a href="https://supabase.com/dashboard/project/jddcjezawvpnlnhhnlbq/auth/url-configuration" target="_blank" rel="noopener noreferrer">Supabase → URL Configuration</a> และขอลิงก์ใหม่</p>
 <form id="requestForm"><label>อีเมลบัญชีครู<input type="email" name="email" required autocomplete="email" placeholder="อีเมลที่ใช้สร้างบัญชี"></label>
 <button class="button button-primary button-wide" type="submit">ส่งลิงก์ตั้งรหัสผ่านใหม่</button></form></section>
 <section id="change" hidden><h1>ตั้งรหัสผ่านใหม่</h1><p class="muted">กำหนดรหัสผ่านอย่างน้อย 12 ตัวอักษร</p>
@@ -22,21 +24,56 @@ import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.57.0';
 const $=id=>document.getElementById(id);
 const opts=window.APP_CONFIG||{};
 const ok=/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/.test(String(opts.supabaseUrl||''))&&String(opts.publishableKey||'').length>30;
-const tokenWasSent=new URLSearchParams(location.hash.replace(/^#/,'')).get('type')==='recovery';
-const emailLinkError=new URLSearchParams(location.hash.replace(/^#/,'')).get('error_description');
+const hashParams=new URLSearchParams(location.hash.replace(/^#/,''));
+const searchParams=new URLSearchParams(location.search);
+const tokenWasSent=hashParams.get('type')==='recovery'||searchParams.get('type')==='recovery'||
+  searchParams.has('code')||searchParams.has('token_hash');
+const emailLinkError=hashParams.get('error_description')||hashParams.get('error')||
+  searchParams.get('error_description')||searchParams.get('error');
 const client=ok?createClient(opts.supabaseUrl,opts.publishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}):null;
 let canChange=false;
-function show(which){for(const id of ['request','change','success'])$(id).hidden=id!==which;$('notice').hidden=true;}
+function show(which){
+  for(const id of ['checking','request','change','success'])$(id).hidden=id!==which;
+  $('notice').hidden=true;
+  if(which==='change')history.replaceState(null,'',location.pathname);
+}
 function msg(message,error=false){$('notice').hidden=false;$('notice').textContent=message;$('notice').className='msg'+(error?' bad':'');}
 function loading(form,state){for(const el of form.querySelectorAll('input,button'))el.disabled=state;}
-if(!client)msg('ระบบเชื่อมต่อฐานข้อมูลยังไม่พร้อม',true);
+if(!client){show('request');msg('ระบบเชื่อมต่อฐานข้อมูลยังไม่พร้อม',true);}
 else{
-  client.auth.onAuthStateChange(event=>{if(event==='PASSWORD_RECOVERY'){canChange=true;show('change');}});
-  if(emailLinkError)msg('ลิงก์ไม่ถูกต้องหรือหมดอายุ กรุณาขอลิงก์ใหม่',true);
-  else if(tokenWasSent)client.auth.getSession().then(({data})=>{
-    if(data?.session){canChange=true;show('change');}
-    else msg('ลิงก์ตั้งรหัสผ่านไม่ถูกต้องหรือหมดอายุ กรุณาขอลิงก์ใหม่',true);
-  }).catch(()=>msg('ตรวจสอบลิงก์ไม่สำเร็จ กรุณาขอลิงก์ใหม่',true));
+  client.auth.onAuthStateChange(event=>{
+    if(event==='PASSWORD_RECOVERY'){canChange=true;show('change');}
+  });
+  if(emailLinkError){
+    show('request');
+    msg('ลิงก์กู้คืนไม่ถูกต้องหรือหมดอายุแล้ว กรุณาขอลิงก์ใหม่ล่าสุด',true);
+  }else if(tokenWasSent){
+    // A link may arrive with implicit tokens, a PKCE code, or a token_hash.
+    // The recovery form must be shown only after a valid authenticated session exists.
+    (async()=>{
+      try{
+        if(searchParams.has('token_hash')){
+          const {error}=await client.auth.verifyOtp({token_hash:searchParams.get('token_hash'),type:'recovery'});
+          if(error)throw error;
+        }
+        const {data,error}=await client.auth.getSession();
+        if(error)throw error;
+        if(!data?.session)throw new Error('Recovery session missing');
+        const user=await client.auth.getUser();
+        if(user.error||!user.data?.user)throw user.error||new Error('Invalid session');
+        canChange=true;show('change');
+      }catch(err){
+        canChange=false;show('request');
+        msg('ยืนยันลิงก์กู้คืนไม่สำเร็จหรือหมดอายุแล้ว โปรดขอลิงก์ใหม่หลังจากตรวจ Redirect URLs',true);
+      }
+    })();
+  }else{
+    // Already authenticated teachers may also change their own password.
+    client.auth.getUser().then(({data,error})=>{
+      if(!error&&data?.user){canChange=true;show('change');}
+      else show('request');
+    }).catch(()=>show('request'));
+  }
 }
 $('requestForm').addEventListener('submit',async event=>{
   event.preventDefault();if(!client)return;const form=event.currentTarget;
