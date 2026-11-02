@@ -66,7 +66,7 @@ function courses(){
  btn('edit-unit','แก้ไข',x.id)+btn('delete-unit','ลบ',x.id,'danger'))).join(''):'<p class="muted">ยังไม่มีหน่วยการเรียนรู้ในรายวิชานี้</p>')+'</div>';
  $('view').innerHTML='<div class="panel">'+head('รายวิชาและห้องเรียน',btn('add-course','+ เปิดสอนรายวิชา','','primary'))+
  '<p class="muted">ผูกรายวิชากับห้องเรียนและภาคเรียน กำหนดจำนวนคาบ เวลาเรียนขั้นต่ำ และเผยแพร่ให้นักเรียน</p>'+
- (S.admin?'<div class="toolbar">'+btn('add-class','+ เพิ่มห้องเรียน')+btn('add-term','+ เพิ่มภาคเรียน')+'</div>':'')+
+ (S.admin?'<div class="toolbar">'+btn('add-subject','+ เพิ่มชื่อวิชา')+btn('add-class','+ เพิ่มห้องเรียน')+btn('add-term','+ เพิ่มภาคเรียน')+'</div>':'')+
  (rows||'<p class="tip">ยังไม่มีรายวิชาที่เปิดสอน กดปุ่ม “เปิดสอนรายวิชา”</p>')+'</div>'+u;
 }
 async function courseModal(id){
@@ -85,6 +85,19 @@ async function courseModal(id){
  periods_per_week:Number(f.get('periods_per_week')),minimum_attendance:Number(f.get('minimum_attendance')),
  late_weight:Number(f.get('late_weight')),leave_weight:Number(f.get('leave_weight')),is_published:f.has('is_published')};
  await write('course_sections',v,id);await loadAll();draw();
+ });
+}
+function subjectModal(id){
+ if(!S.admin)return;
+ const x=S.subjects.find(v=>v.id===id)||{};
+ editor(id?'แก้ไขรายวิชา':'เพิ่มชื่อรายวิชา',
+ option('name','ชื่อรายวิชา',x.name||'','text','maxlength="150" required')+
+ option('subject_code','รหัสวิชา (ถ้ามี)',x.subject_code||'','text','maxlength="40"')+
+ area('description','คำอธิบายรายวิชา',x.description||'')+
+ tick('is_active','เผยแพร่ชื่อรายวิชาบนเว็บไซต์',x.is_active??true),async f=>{
+ await write('teacher_subjects',{name:String(f.get('name')||'').trim(),subject_code:String(f.get('subject_code')||''),
+ description:String(f.get('description')||''),is_active:f.has('is_active')},id);
+ await loadAll();draw();
  });
 }
 async function classModal(){
@@ -286,7 +299,8 @@ function paPage(){
  const pc=cycle?Math.round(100*counted.size/Math.max(S.indicators.length,1)):0;
  $('view').innerHTML='<div class="panel">'+head('แฟ้มข้อตกลงในการพัฒนางาน (วPA)',btn('add-evidence','+ เพิ่มหลักฐาน','','primary'))+
  '<p class="muted">ข้อมูลส่วนนี้เป็นข้อมูลส่วนตัวของผู้ดูแล ยังไม่เปิดเผยแก่ผู้เยี่ยมชมเว็บไซต์</p>'+
- '<div class="toolbar">'+(cycle?'<span class="pill">ปีงบประมาณ พ.ศ. '+h(cycle.fiscal_year)+'</span>'+btn('edit-pa','แก้ไขประเด็นท้าทาย',cycle.id):btn('add-pa','+ เพิ่มปีงบประมาณ'))+'</div>'+
+ '<div class="toolbar">'+(cycle?'<span class="pill">ปีงบประมาณ พ.ศ. '+h(cycle.fiscal_year)+'</span>'+btn('edit-pa','แก้ไขประเด็นท้าทาย',cycle.id):btn('add-pa','+ เพิ่มปีงบประมาณ'))+
+ btn('add-indicator','+ เพิ่มตัวชี้วัด')+'</div>'+
  '<p>ความครบถ้วนของหลักฐาน (นับตัวชี้วัดที่มีหลักฐานอย่างน้อย 1 รายการ): <strong>'+counted.size+' / '+S.indicators.length+' ตัวชี้วัด</strong> · '+pc+'%</p>'+
  '<div class="progress"><div class="bar" style="width:'+pc+'%"></div></div>'+
  (cycle?.challenge_title?'<p><strong>ประเด็นท้าทาย:</strong> '+h(cycle.challenge_title)+'</p>':'')+'</div>'+
@@ -295,7 +309,7 @@ function paPage(){
  return '<div class="panel"><h2>ด้านที่ '+area+' · '+({1:'จัดการเรียนรู้',2:'ส่งเสริมและสนับสนุน',3:'พัฒนาตนเองและวิชาชีพ'}[area])+'</h2>'+
  filtered.map(i=>item(i.code+' '+i.title,
  'หลักฐาน '+S.evidence.filter(e=>e.indicator_id===i.id&&e.cycle_id===cycle?.id).length+' รายการ',
- btn('add-evidence-for','+ แนบหลักฐาน',i.id))).join('')+'</div>';
+ btn('add-evidence-for','+ แนบหลักฐาน',i.id)+btn('edit-indicator','แก้ไขตัวชี้วัด',i.id))).join('')+'</div>';
  }).join('')+'</div>'+
  '<div class="panel">'+head('รายการหลักฐาน')+
  (S.evidence.filter(e=>e.cycle_id===cycle?.id).length?S.evidence.filter(e=>e.cycle_id===cycle?.id).map(e=>item(e.title,
@@ -315,6 +329,18 @@ function paCycleModal(id){
  await write('pa_cycles',{fiscal_year:Number(f.get('fiscal_year')),starts_on:f.get('starts_on'),ends_on:f.get('ends_on'),
  challenge_title:String(f.get('challenge_title')||''),challenge_description:String(f.get('challenge_description')||'')},id);
  await loadAll();draw();
+ });
+}
+function indicatorModal(id){
+ if(!S.admin)return;
+ const x=S.indicators.find(v=>v.id===id)||{};
+ editor(id?'แก้ไขตัวชี้วัด วPA':'เพิ่มตัวชี้วัด วPA',
+ option('code','รหัสตัวชี้วัด',x.code||'','text','maxlength="25" required')+
+ '<label>ด้านที่<select name="area_no" class="in">'+[1,2,3].map(n=>'<option value="'+n+'"'+(n===(x.area_no||1)?' selected':'')+'>'+n+'</option>').join('')+'</select></label>'+
+ area('title','คำอธิบายตัวชี้วัด',x.title||''),async f=>{
+ const value={code:String(f.get('code')||'').trim(),area_no:Number(f.get('area_no')),title:String(f.get('title')||'').trim()};
+ if(!value.code||!value.title)throw Error('กรอกรหัสและคำอธิบาย');
+ await write('pa_indicators',value,id);await loadAll();draw();
  });
 }
 function evidenceModal(id,indicatorId){
@@ -409,6 +435,7 @@ async function toTab(tab){
 async function runAction(action,id){
  if(S.busy)return;
  if(action.startsWith('go-'))return toTab(action.slice(3));
+ if(action==='add-subject')return subjectModal();
  if(action==='add-class')return classModal();
  if(action==='add-term')return termModal();
  if(action==='add-course'||action==='edit-course')return courseModal(id);
@@ -446,6 +473,7 @@ async function runAction(action,id){
  }
  if(action==='grade-csv')return csv([['ชั้นเรียน','รายการประเมิน','คะแนนเต็ม'],...S.assessments.map(a=>[name(S.classes,a.class_id),a.title,a.max_score])],'รายการประเมิน.csv');
  if(action==='add-pa'||action==='edit-pa')return paCycleModal(id);
+ if(action==='add-indicator'||action==='edit-indicator')return indicatorModal(id);
  if(action==='add-evidence'||action==='edit-evidence')return evidenceModal(id);
  if(action==='add-evidence-for')return evidenceModal(null,id);
  if(action==='open-pa-file'){
