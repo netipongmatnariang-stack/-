@@ -589,7 +589,15 @@ function wire(){
    e.target.reset();
    busy(false);await enterAdmin();
   }catch(err){
-   $('loginError').textContent='เข้าสู่ระบบไม่สำเร็จ ตรวจสอบอีเมล รหัสผ่าน และสิทธิ์บัญชี';
+   const message=String(err?.message||'').toLowerCase();
+   $('loginError').textContent=
+     message.includes('invalid login')||message.includes('invalid credentials')
+       ?'อีเมลหรือรหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบอีเมลใน Supabase หรือกด “ลืมรหัสผ่าน”'
+     : message.includes('email not confirmed')
+       ?'อีเมลนี้ยังไม่ได้ยืนยัน กรุณาตรวจสอบอีเมลยืนยันบัญชี'
+     : message.includes('fetch')||message.includes('network')
+       ?'เชื่อมต่อระบบไม่ได้ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่'
+     :'เข้าสู่ระบบไม่สำเร็จ กรุณาตรวจสอบบัญชีและลองใหม่ ('+String(err?.code||'unknown')+')';
    busy(false);
   }
  });
