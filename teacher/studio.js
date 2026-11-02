@@ -3,7 +3,11 @@ const cfg=window.APP_CONFIG||{};
 const db=createClient(cfg.supabaseUrl,cfg.publishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
 const $=id=>document.getElementById(id);
 const h=x=>String(x??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-const today=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Bangkok',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+const today=()=>{
+ const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Bangkok',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+ const by=Object.fromEntries(parts.map(p=>[p.type,p.value]));
+ return by.year+'-'+by.month+'-'+by.day;
+};
 const dateTH=v=>v?new Intl.DateTimeFormat('th-TH',{dateStyle:'medium',timeZone:'Asia/Bangkok'}).format(new Date(String(v).slice(0,10)+'T12:00:00+07:00')):'-';
 const safeLink=v=>{try{const u=new URL(v);return ['https:','http:'].includes(u.protocol)?h(u.href):'#'}catch{return '#'}};
 let S={user:null,profile:null,admin:false,tab:'overview',subjects:[],terms:[],classes:[],students:[],sections:[],paCycles:[],indicators:[],evidence:[],portfolio:[],
@@ -372,7 +376,7 @@ function portfolioPage(){
  if(!S.admin){$('view').innerHTML='<div class="panel"><p class="error">เฉพาะ Admin ที่จัดการผลงานได้</p></div>';return;}
  const categories={photo:'ภาพกิจกรรม',video:'วิดีโอ',certificate:'เกียรติบัตร',award:'รางวัล',research:'งานวิจัย',innovation:'นวัตกรรม',training:'การอบรม',other:'อื่น ๆ'};
  $('view').innerHTML='<div class="panel">'+head('ผลงาน เกียรติบัตร ภาพกิจกรรม และวิดีโอ',btn('add-portfolio','+ เพิ่มรายการ','','primary'))+
- '<p class="muted">เผยแพร่เฉพาะรายการที่ได้รับอนุญาต หากมีภาพนักเรียนให้ตรวจสอบสิทธิ์เผยแพร่และ PDPA ก่อน</p>'+
+ '<p class="muted">ภาพที่อัปโหลดเข้าคลังผลงานเป็นไฟล์สาธารณะโดยธรรมชาติ โปรดตรวจสอบสิทธิ์และ PDPA ก่อนเลือกเผยแพร่ หลีกเลี่ยงไฟล์ข้อมูลส่วนตัว</p>'+
  '<p><a href="./portfolio.html" target="_blank" rel="noopener noreferrer">เปิดหน้ารวมผลงานสาธารณะ ↗</a></p>'+
  (S.portfolio.length?S.portfolio.map(x=>item(x.title,
  (categories[x.category]||x.category)+' · '+dateTH(x.event_date)+' · '+(x.is_published?'เผยแพร่แล้ว':'ฉบับร่าง'),
@@ -395,6 +399,7 @@ function portfolioModal(id){
  let image_url=String(f.get('image_url')||''),newPath='';
  const file=f.get('cover_file'),hasFile=file instanceof File&&file.size>0;
  if(hasFile){
+  if(!f.has('is_published'))throw Error('หากอัปโหลดภาพสาธารณะ ต้องเลือกเผยแพร่และตรวจสอบสิทธิ์ใช้ภาพก่อน');
   const exts={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'};
   if(!exts[file.type]||file.size>10*1024*1024)throw Error('รูปหน้าปกต้องเป็น JPG PNG หรือ WEBP และไม่เกิน 10 MB');
   newPath='portfolio/'+crypto.randomUUID()+'.'+exts[file.type];
@@ -402,9 +407,20 @@ function portfolioModal(id){
   if(error)throw error;
   image_url=db.storage.from('teacher-gallery').getPublicUrl(newPath).data.publicUrl;
  }
+ const published=f.has('is_published');
+ // A previously published uploaded photo must be detached when moved back to a draft.
+ let oldGalleryPath='';
+ if(x.image_url && x.image_url.includes('/storage/v1/object/public/teacher-gallery/')){
+  oldGalleryPath=decodeURIComponent(x.image_url.split('/storage/v1/object/public/teacher-gallery/')[1].split('?')[0]);
+ }
+ if(!published && oldGalleryPath)image_url='';
  try{await write('teacher_portfolio',{category:f.get('category'),title:String(f.get('title')).trim(),description:String(f.get('description')||''),
- event_date:f.get('event_date')||null,image_url,link_url:String(f.get('link_url')||''),is_published:f.has('is_published')},id);}
+ event_date:f.get('event_date')||null,image_url,link_url:String(f.get('link_url')||''),is_published:published},id);}
  catch(err){if(newPath)await db.storage.from('teacher-gallery').remove([newPath]);throw err;}
+ if(!published && oldGalleryPath){
+  const {error}=await db.storage.from('teacher-gallery').remove([oldGalleryPath]);
+  if(error)note('ปิดเผยแพร่รายการแล้ว แต่ลบไฟล์ภาพเดิมไม่ได้ โปรดลบใน Storage ด้วย: '+error.message,true);
+ }
  await loadAll();draw();
  });
 }
