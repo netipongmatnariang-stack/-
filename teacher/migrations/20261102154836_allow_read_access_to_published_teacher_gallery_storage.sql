@@ -1,0 +1,1 @@
+create policy teacher_gallery_public_select on storage.objects for select to anon,authenticated using(bucket_id='teacher-gallery');
