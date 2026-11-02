@@ -1,0 +1,54 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0c3c7c">
+<meta name="description" content="สมุดคะแนนออนไลน์ บันทึกคะแนนและตัดเกรดถ่วงน้ำหนัก">
+<title>สมุดคะแนนออนไลน์ | Teacher Smart Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}body{font-family:Prompt,sans-serif;margin:0;color:#18365c;background:#f0f6ff}
+header{background:linear-gradient(110deg,#062b62,#075eaf 77%,#15b2dc);padding:20px max(16px,calc((100vw - 1210px)/2));color:#fff}
+header a{color:#fff;font-size:12px;text-decoration:none}header h1{margin:6px 0;font-size:22px}
+main{max-width:1240px;margin:20px auto 75px;padding:0 14px}
+.panel{background:#fff;padding:20px;border:1px solid #dbe7f5;border-radius:17px;margin:16px 0;box-shadow:0 8px 25px #0d54800d}
+.panel h2{font-size:17px;color:#164a87;margin:0 0 12px}.muted{color:#637f9b;font-size:12px}
+.row{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.between{justify-content:space-between}
+.btn{font-family:inherit;font-size:12px;font-weight:600;background:#eff5ff;border:1px solid #c9def4;color:#105eaf;border-radius:9px;padding:8px 12px;cursor:pointer}
+.btn.primary{background:#086ac3;color:#fff;border-color:#086ac3}.btn.danger{background:#fff1f2;color:#a73043;border-color:#f3cdd1}.btn:disabled{opacity:.6}
+select,input,textarea{font:inherit;background:#fff;border:1px solid #ccdaeb;padding:10px;border-radius:9px;font-size:13px;max-width:100%}
+label{display:block;font-size:12px;color:#24486c;margin:10px 0}
+label>input,label>select,label>textarea{display:block;width:100%;margin-top:5px}
+textarea{min-height:85px}
+table{border-collapse:collapse;width:100%;font-size:12px}
+th,td{padding:10px;border-bottom:1px solid #e1eaf5;text-align:left;vertical-align:middle}th{background:#f6f9ff;white-space:nowrap}
+th .btn{margin:4px 0}td>input{width:72px;padding:7px;min-width:68px}
+.scroll{overflow:auto}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.card{border:1px solid #e0ebf7;background:#f8fbff;border-radius:14px;padding:14px}
+.card strong{display:block;color:#145fac;font-size:24px}
+.info{background:#edf6ff;border-left:3px solid #48b7e0;padding:12px;border-radius:8px;font-size:12px}
+.error{background:#ffeff0;color:#ac2e42;padding:12px;border-radius:10px;font-size:12px}
+.ok{background:#e8f8ef;color:#17724d;padding:12px;border-radius:10px;font-size:12px}
+.line{padding:12px 0;border-bottom:1px solid #e3ecf7}.line:last-child{border-bottom:0}
+dialog{width:min(510px,94vw);border:0;border-radius:19px;padding:0;box-shadow:0 25px 75px #142b5b66;max-height:90vh;overflow:auto}
+dialog::backdrop{background:#0b224869}.dialoginner{padding:23px}
+[hidden]{display:none!important}
+@media(max-width:600px){.panel{padding:13px}header{padding:20px 15px}.btn{padding:7px 9px}td,th{font-size:11px}}
+@media print{header,#login,#tools,#categories,#gradesActions,#historyPane,#saveGrid,#message,dialog{display:none!important}body{background:#fff}main{max-width:none;padding:0;margin:0}.panel{border:0;box-shadow:none;padding:5px}.scroll{overflow:visible}td>input{border:0;max-width:65px}}
+</style><script src="./config.js"></script><script type="module" src="./grades.js"></script></head>
+<body><header><div class="row between"><div><a href="./studio.html">← Teacher Smart Portal</a><h1>สมุดคะแนนออนไลน์ · Gradebook</h1></div><a href="./student.html">สำหรับนักเรียน</a></div></header>
+<main>
+<section id="login" class="panel" style="max-width:420px;margin:40px auto" hidden><h2>เข้าสู่ระบบครู</h2><p class="muted">ใช้บัญชีครูหรือ Admin ที่เปิดสิทธิ์ใน Supabase</p>
+<form id="loginForm"><label>อีเมล<input type="email" name="email" required autocomplete="username"></label>
+<label>รหัสผ่าน<input type="password" name="password" required autocomplete="current-password"></label>
+<p id="loginError" class="error" hidden></p><button class="btn primary">เข้าสู่ระบบ</button> <a href="./reset.html" class="btn">ลืมรหัสผ่าน</a></form></section>
+<section id="content" hidden>
+<div class="panel" id="tools"><div class="row between"><h2>เลือกวิชาและห้องเรียน</h2><button class="btn" id="signOut">ออกจากระบบ</button></div>
+<div class="row"><label>รายวิชา / ชั้นเรียน / ภาคเรียน <select id="courseSelect"></select></label>
+<button class="btn" id="reload">โหลดข้อมูลใหม่</button></div></div>
+<p id="message" hidden role="status" aria-live="polite"></p>
+<section class="panel" id="categories"></section>
+<section class="panel" id="gradeTable"></section>
+<section class="panel" id="historyPane" hidden></section>
+</section></main>
+<dialog id="editor"><form id="editForm" class="dialoginner"><h2 id="editTitle"></h2><div id="editFields"></div>
+<p id="editError" class="error" hidden></p><div class="row" style="justify-content:flex-end;margin-top:17px">
+<button type="button" id="cancel" class="btn">ยกเลิก</button><button id="save" class="btn primary" type="submit">บันทึก</button></div></form></dialog>
+</body></html>
