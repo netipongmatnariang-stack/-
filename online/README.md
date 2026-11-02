@@ -1,6 +1,6 @@
 # ระบบเช็คชื่อนักเรียนออนไลน์ — โรงเรียนบ้านหินลาด
 
-โฟลเดอร์ \`online/\` เป็นเวอร์ชันที่เชื่อม **Supabase Auth + PostgreSQL** (ไม่ใช้ localStorage เก็บรายชื่อนักเรียน) รองรับครูหลายบัญชีและการบันทึกลงฐานข้อมูลเดียวกัน
+โฟลเดอร์ `online/` เป็นเวอร์ชันที่เชื่อม **Supabase Auth + PostgreSQL** (ไม่ใช้ localStorage เก็บรายชื่อนักเรียน) รองรับครูหลายบัญชีและการบันทึกลงฐานข้อมูลเดียวกัน
 
 ## สิ่งที่ทำได้
 
@@ -19,43 +19,43 @@
 3. ไปที่ **Project Settings > API** (หรือ Settings > API Keys ตามหน้าจอปัจจุบัน) แล้วคัดลอก **Project URL** และ **publishable key** (หรือ legacy anon key) เท่านั้น
 4. ใน GitHub แก้ไข [config.js](./config.js) ให้เป็น:
    
-   \`\`\`js
+   ```js
    window.APP_CONFIG = Object.freeze({
      supabaseUrl: "https://YOUR-PROJECT.supabase.co",
      publishableKey: "YOUR_PUBLISHABLE_OR_ANON_KEY"
    });
-   \`\`\`
+   ```
    
    **ห้ามใช้ secret key หรือ service_role key ในไฟล์สาธารณะ / หน้าเว็บไซต์ / บทสนทนา** — คีย์ publishable/anon เป็นคีย์สาธารณะ ใช้ได้เมื่อเปิด RLS อย่างถูกต้องแล้ว
 5. ไปที่ Supabase **Authentication > Providers/Settings** แล้วปิดการสมัครสมาชิกด้วยตนเอง (Allow new users to sign up) เพื่อให้สร้างบัญชีโดยผู้ดูแลเท่านั้น
 6. ไปที่ **Authentication > Users** แล้วเพิ่มบัญชีแรกสำหรับผู้ดูแลระบบ กำหนดอีเมลและรหัสผ่านที่รัดกุมและยืนยันอีเมลตามนโยบายของโปรเจ็กต์
 7. กลับไปที่ SQL Editor แล้วรันคำสั่งต่อไปนี้ **โดยเปลี่ยนอีเมลให้ตรงบัญชีแรกที่สร้างแล้ว**:
    
-   \`\`\`sql
+   ```sql
    update public.profiles p
    set role = 'admin', full_name = 'ผู้ดูแลระบบโรงเรียนบ้านหินลาด'
    from auth.users u
    where p.id = u.id
      and u.email = 'admin@your-school-domain.example';
-   \`\`\`
+   ```
    
    ตรวจสอบผลลัพธ์ด้วย:
    
-   \`\`\`sql
+   ```sql
    select u.email, p.full_name, p.role
    from public.profiles p
    join auth.users u on u.id = p.id;
-   \`\`\`
-8. เข้าใช้งานหน้า \`/online/\` แล้วล็อกอินผู้ดูแล เพิ่มชั้นเรียน
-9. สร้างบัญชีครูเพิ่มเติมใน Supabase **Authentication > Users**, ใส่ชื่อครูได้ใน \`public.profiles.full_name\` ผ่าน SQL Editor (หรือแก้ไขข้อมูลที่ได้รับอนุญาตในแดชบอร์ด), กดรีเฟรชข้อมูลบนหน้า "จัดการผู้ใช้และห้องเรียน" แล้วมอบหมายครูประจำห้อง
+   ```
+8. เข้าใช้งานหน้า `/online/` แล้วล็อกอินผู้ดูแล เพิ่มชั้นเรียน
+9. สร้างบัญชีครูเพิ่มเติมใน Supabase **Authentication > Users**, ใส่ชื่อครูได้ใน `public.profiles.full_name` ผ่าน SQL Editor (หรือแก้ไขข้อมูลที่ได้รับอนุญาตในแดชบอร์ด), กดรีเฟรชข้อมูลบนหน้า "จัดการผู้ใช้และห้องเรียน" แล้วมอบหมายครูประจำห้อง
 10. **ทดสอบกับข้อมูลสมมติ** ก่อนใช้ข้อมูลจริง โดยลองล็อกอินครู 2 คนและตรวจสอบว่าแต่ละคนไม่สามารถอ่านหรือแก้ไขห้องเรียนของอีกคนได้
 
 ## การเผยแพร่
 
-โปรเจ็กต์ GitHub มี workflow \`.github/workflows/deploy-pages.yml\` อยู่แล้ว เปิด **Settings > Pages > Build and deployment > GitHub Actions** (ต้องมีสิทธิ์เจ้าของ GitHub) แล้วดูผลลัพธ์ในแท็บ **Actions** ก่อนแชร์ URL
+โปรเจ็กต์ GitHub มี workflow `.github/workflows/deploy-pages.yml` อยู่แล้ว เปิด **Settings > Pages > Build and deployment > GitHub Actions** (ต้องมีสิทธิ์เจ้าของ GitHub) แล้วดูผลลัพธ์ในแท็บ **Actions** ก่อนแชร์ URL
 
 ถ้าเปิดใช้งาน GitHub Pages สำเร็จ หน้าเว็บไซต์ที่คาดว่าจะใช้คือ:
-\`https://netipongmatnariang-stack.github.io/-/online/\`
+`https://netipongmatnariang-stack.github.io/-/online/`
 
 หากยังไม่ได้ตั้งค่า config.js เว็บไซต์จะแสดงหน้าช่วยตั้งค่าฐานข้อมูล และ **ยังล็อกอิน/บันทึกลงฐานข้อมูลจริงไม่ได้**.
 
