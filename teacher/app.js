@@ -444,6 +444,7 @@ function assessmentModal(id){
  if(!s.classes.length)return toast('กรุณาสร้างชั้นเรียนก่อน',true);
  modal(old?'แก้ไขแบบประเมิน':'สร้างกิจกรรมประเมิน',
   selectField('class_id','ชั้นเรียน',s.classes.map(c=>[c.id,c.name]),old?.class_id||s.classId)+
+  selectField('subject_id','รายวิชา',subjectOptions(old?.subject_id||''),old?.subject_id||'')+
   inputField('title','ชื่อกิจกรรม/แบบประเมิน',old?.title||'','text',true,'maxlength="200"')+
   selectField('category','ประเภท',Object.entries(CATEGORIES),old?.category||'worksheet')+
   inputField('max_score','คะแนนเต็ม',old?.max_score||10,'number',true,'min="0.01" max="10000" step="0.01"')+
@@ -451,7 +452,7 @@ function assessmentModal(id){
   textareaField('details','รายละเอียด',old?.details||'','maxlength="1000"'),async f=>{
    const max=Number(f.get('max_score'));
    if(!Number.isFinite(max)||max<=0||max>10000)throw Error('คะแนนเต็มต้องมากกว่า 0 และไม่เกิน 10,000');
-   const val={class_id:String(f.get('class_id')),title:String(f.get('title')).trim(),category:String(f.get('category')),
+   const val={class_id:String(f.get('class_id')),subject_id:String(f.get('subject_id')||'')||null,title:String(f.get('title')).trim(),category:String(f.get('category')),
      max_score:max,assessment_date:String(f.get('assessment_date')),details:String(f.get('details')).trim()};
    if(!val.title)throw Error('กรอกชื่อกิจกรรม');
    const {error}=await (old?db.from('assessments').update(val).eq('id',old.id):db.from('assessments').insert(val));
@@ -465,7 +466,7 @@ function worksheetModal(id){
  modal(old?'แก้ไขใบงาน':'เพิ่มใบงาน',
   inputField('title','ชื่อใบงาน',old?.title||'','text',true,'maxlength="240"')+
   textareaField('description','รายละเอียดใบงาน',old?.description||'','maxlength="3000"')+
-  inputField('subject','รายวิชา/หัวข้อ',old?.subject||'','text',false,'maxlength="150"')+
+  selectField('subject_id','รายวิชา',subjectOptions(old?.subject_id||''),old?.subject_id||'')+
   inputField('grade_label','ระดับชั้น เช่น ป.5',old?.grade_label||'','text',false,'maxlength="100"')+
   '<label>เลือกไฟล์ใบงาน (PDF, DOCX, JPG, PNG สูงสุด 10 MB)<input type="file" class="control" name="file" accept=".pdf,.docx,.png,.jpg,.jpeg"></label>'+
   inputField('external_url','หรือใส่ลิงก์ HTTPS',old?.external_url||'','url',false,'placeholder="https://"')+
@@ -485,7 +486,8 @@ function worksheetModal(id){
    }
    const val={
     title:String(f.get('title')).trim(),description:String(f.get('description')).trim(),
-    subject:String(f.get('subject')).trim(),grade_label:String(f.get('grade_label')).trim(),
+    subject_id:String(f.get('subject_id')||'')||null,
+     subject:subjectById(String(f.get('subject_id')||''))?.name||'',grade_label:String(f.get('grade_label')).trim(),
     external_url:hasFile?null:(external||null),file_path:path,is_published:f.get('is_published')==='on'
    };
    if(!val.title)throw Error('กรอกชื่อใบงาน');
