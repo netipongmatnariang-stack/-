@@ -8,12 +8,12 @@ const db = configured ? createClient(ENDPOINT, PUBLIC_KEY, {auth:{autoRefreshTok
 const $ = id => document.getElementById(id);
 const STATUSES = {present:'มาเรียน',absent:'ขาดเรียน',late:'มาสาย',sick:'ลาป่วย',personal:'ลากิจ'};
 const CATEGORIES = {worksheet:'ใบงาน',quiz:'แบบทดสอบ',assignment:'ชิ้นงาน',activity:'กิจกรรม',other:'อื่น ๆ'};
-const ADMIN_TITLES = {overview:'ภาพรวม',attendance:'เช็คชื่อนักเรียน',students:'รายชื่อนักเรียน',assessments:'ประเมินและบันทึกคะแนน',worksheets:'จัดการใบงาน',announcements:'จัดการประกาศ',settings:'ตั้งค่าเว็บไซต์'};
+const ADMIN_TITLES = {overview:'ภาพรวม',attendance:'เช็คชื่อนักเรียน',students:'รายชื่อนักเรียน',assessments:'ประเมินและบันทึกคะแนน',worksheets:'จัดการใบงาน',subjects:'จัดการรายวิชา',announcements:'จัดการประกาศ',settings:'ตั้งค่าเว็บไซต์'};
 const s = {
   view:'home', tab:'overview', user:null,profile:null,
   site:{site_title:'ห้องเรียนดิจิทัล',teacher_name:'ครูเนติพงษ์ มาตนาเรียง',tagline:'เรียนรู้ สนุกคิด และเติบโตไปด้วยกัน',introduction:'พื้นที่รวมสื่อการเรียนรู้ ใบงาน และกิจกรรมวิทยาการคำนวณ',subject:'วิทยาศาสตร์และเทคโนโลยี · วิทยาการคำนวณ'},
-  publicWorksheets:[],publicAnnouncements:[],
-  classes:[],students:[],assessments:[],worksheets:[],announcements:[],
+  publicWorksheets:[],publicAnnouncements:[],publicSubjects:[],publicSubjectFilter:'all',
+  classes:[],students:[],assessments:[],worksheets:[],subjects:[],announcements:[],
   attendance:[],assessmentScores:[],currentAssessment:null,
   classId:'',studentClass:'all',studentSearch:'',attDate:isoLocal(new Date()),
   busy:false
@@ -49,13 +49,15 @@ async function allRows(table,cols,sort,filter){
 }
 async function refreshPublic(){
  if(!db)return;
- const [site,works,ann]=await Promise.all([
+ const [site,works,ann,subjects]=await Promise.all([
   db.from('teacher_site').select('site_title,teacher_name,tagline,introduction,subject').eq('id',1).single(),
-  db.from('worksheets').select('id,title,description,subject,grade_label,file_path,external_url,created_at').eq('is_published',true).order('created_at',{ascending:false}).limit(100),
-  db.from('teacher_announcements').select('id,title,body,created_at').eq('is_published',true).order('created_at',{ascending:false}).limit(40)
+  db.from('worksheets').select('id,title,description,subject,subject_id,grade_label,file_path,external_url,created_at').eq('is_published',true).order('created_at',{ascending:false}).limit(100),
+  db.from('teacher_announcements').select('id,title,body,created_at').eq('is_published',true).order('created_at',{ascending:false}).limit(40),
+   db.from('teacher_subjects').select('id,name,subject_code,description,is_active,sort_order').eq('is_active',true).order('sort_order').order('name')
  ]);
- if(site.error)throw site.error;if(works.error)throw works.error;if(ann.error)throw ann.error;
- s.site=site.data;s.publicWorksheets=works.data||[];s.publicAnnouncements=ann.data||[];
+ if(site.error)throw site.error;if(works.error)throw works.error;if(ann.error)throw ann.error;if(subjects.error)throw subjects.error;
+ s.site=site.data;s.publicWorksheets=works.data||[];s.publicAnnouncements=ann.data||[];s.publicSubjects=subjects.data||[];
+ if(s.publicSubjectFilter!=='all'&&!s.publicSubjects.some(x=>x.id===s.publicSubjectFilter))s.publicSubjectFilter='all';
  document.title=s.site.site_title+' | '+s.site.teacher_name;
  $('brandTitle').textContent=s.site.site_title;
 }
@@ -64,9 +66,23 @@ function worksheetLink(w){
  if(w.file_path){const {data}=db.storage.from('teacher-worksheets').getPublicUrl(w.file_path);return safeUrl(data.publicUrl);}
  return '#';
 }
+function subjectById(id){return s.subjects.find(x=>x.id===id)||s.publicSubjects.find(x=>x.id===id);}
+function subjectName(w){return subjectById(w.subject_id)?.name||w.subject||'ทั่วไป';}
+function subjectOptions(value='',blank=true){
+ const source=admin()?s.subjects:s.publicSubjects;
+ return (blank?[['','ไม่ระบุรายวิชา']]:[]).concat(source.filter(x=>x.is_active||x.id===value).map(x=>[x.id,x.name+(x.subject_code?' ('+x.subject_code+')':'')+(x.is_active?'':' · ปิดแสดง')]));
+}
+function publicSubjects(){
+ return '<section class="section"><div class="public-container"><div class="section-head"><div><span class="eyebrow">OUR SUBJECTS</span><h2>รายวิชาทั้งหมด</h2><p class="muted">เลือกรายวิชาเพื่อดูใบงานและเอกสาร</p></div></div><div class="features">'+
+ (s.publicSubjects.length?s.publicSubjects.map(x=>'<article class="feature-card"><div class="feature-icon">◈</div><h3>'+h(x.name)+'</h3>'+
+ '<p>'+h(x.description||'เรียนรู้ผ่านกิจกรรมและสื่อออนไลน์')+'</p>'+
+ (x.subject_code?'<span class="tag">'+h(x.subject_code)+'</span>':'')+
+ '<p><button class="button button-outline button-small" data-action="open-subject" data-id="'+h(x.id)+'">ดูใบงาน →</button></p></article>').join(''):empty('ยังไม่มีรายวิชา','กรุณาติดต่อผู้ดูแลเว็บไซต์'))+
+ '</div></div></section>';
+}
 function worksheetCard(w){
  const url=worksheetLink(w);
- return '<article class="resource-card"><div class="resource-image">▤</div><div class="meta"><span class="tag">'+h(w.grade_label||'ทุกระดับ')+'</span><span class="tag green">'+h(w.subject||'ใบงาน')+'</span></div>'+
+ return '<article class="resource-card"><div class="resource-image">▤</div><div class="meta"><span class="tag">'+h(w.grade_label||'ทุกระดับ')+'</span><span class="tag green">'+h(subjectName(w))+'</span></div>'+
  '<h3>'+h(w.title)+'</h3><p>'+h(w.description||'เอกสารประกอบการเรียนรู้สำหรับนักเรียน')+'</p>'+
  '<a class="button button-outline button-small" target="_blank" rel="noopener noreferrer" href="'+safeAttr(url)+'">↓ เปิดใบงาน / ดาวน์โหลด</a></article>';
 }
@@ -96,8 +112,13 @@ function publicHome(){
   '<div class="news-grid">'+(news.length?news.map(newsCard).join(''):empty('ยังไม่มีข่าวสาร','ติดตามกิจกรรมและประกาศได้ที่นี่'))+'</div></div></section>';
 }
 function newsCard(a){return '<article class="news-card"><span class="news-date">'+h(thDate(String(a.created_at).slice(0,10)))+'</span><h3>'+h(a.title)+'</h3><p>'+h(a.body)+'</p></article>';}
-function publicWorksheets(){return '<section class="section"><div class="public-container"><div class="section-head"><div><span class="eyebrow">DOWNLOAD CENTER</span><h2>คลังใบงานและสื่อการเรียนรู้</h2><p class="muted">เลือกเปิดหรือดาวน์โหลดเอกสารที่ครูเผยแพร่</p></div></div>'+
- '<div class="worksheets-grid">'+(s.publicWorksheets.length?s.publicWorksheets.map(worksheetCard).join(''):empty('ยังไม่มีใบงาน','รอครูเพิ่มเอกสารในระบบหลังบ้าน'))+'</div></div></section>';}
+function publicWorksheets(){
+ const list=s.publicSubjectFilter==='all'?s.publicWorksheets:s.publicWorksheets.filter(w=>w.subject_id===s.publicSubjectFilter);
+ const choices='<option value="all"'+(s.publicSubjectFilter==='all'?' selected':'')+'>ทุกวิชา</option>'+s.publicSubjects.map(x=>'<option value="'+h(x.id)+'"'+(s.publicSubjectFilter===x.id?' selected':'')+'>'+h(x.name)+'</option>').join('');
+ return '<section class="section"><div class="public-container"><div class="section-head"><div><span class="eyebrow">DOWNLOAD CENTER</span><h2>คลังใบงานและสื่อการเรียนรู้</h2><p class="muted">เลือกเปิดหรือดาวน์โหลดเอกสารที่ครูเผยแพร่</p></div></div>'+
+ '<div class="tool-row"><label class="field-inline">เลือกรายวิชา <select class="control" data-control="publicSubject">'+choices+'</select></label></div>'+
+ '<div class="worksheets-grid">'+(list.length?list.map(worksheetCard).join(''):empty('ไม่มีใบงานในรายวิชานี้','ครูยังไม่ได้เผยแพร่เอกสาร'))+'</div></div></section>';
+}
 function publicAnnouncements(){return '<section class="section"><div class="public-container"><div class="section-head"><div><span class="eyebrow">NEWS & UPDATES</span><h2>ข่าวสารและประกาศ</h2></div></div><div class="news-grid">'+
  (s.publicAnnouncements.length?s.publicAnnouncements.map(newsCard).join(''):empty('ยังไม่มีประกาศ','อัปเดตประกาศใหม่ได้จากหลังบ้าน'))+'</div></div></section>';}
 function publicAbout(){return '<section class="section"><div class="public-container"><div class="about-panel"><div class="about-symbol">✳</div><div><span class="eyebrow">ABOUT THE TEACHER</span><h2>'+h(s.site.teacher_name)+'</h2><p style="font-weight:600">'+h(s.site.subject)+'</p><p>'+h(s.site.introduction)+'</p><span class="tag">โรงเรียนบ้านหินลาด</span></div></div></div></section>';}
@@ -107,6 +128,7 @@ function setView(view){
  document.querySelectorAll('.nav-btn').forEach(x=>x.classList.toggle('active',x.dataset.view===view));
  if(view==='home')$('publicContent').innerHTML=publicHome();
  if(view==='worksheets')$('publicContent').innerHTML=publicWorksheets();
+ if(view==='subjects')$('publicContent').innerHTML=publicSubjects();
  if(view==='announcements')$('publicContent').innerHTML=publicAnnouncements();
  if(view==='about')$('publicContent').innerHTML=publicAbout();
  $('publicNav').classList.remove('open');window.scrollTo({top:0,behavior:'instant'});
@@ -539,6 +561,8 @@ async function handleAction(el){
  if(act==='go-students')setAdminTab('students');
  if(act==='go-assessments')setAdminTab('assessments');
  if(act==='go-worksheets')setAdminTab('worksheets');
+ if(act==='go-subjects')setAdminTab('subjects');
+ if(act==='open-subject'){if(!s.publicSubjects.some(x=>x.id===id))return;s.publicSubjectFilter=id;setView('worksheets');}
  if(act==='set-status')await mark(id,el.dataset.status);
  if(act==='clear-status')await clearStatus(id);
  if(act==='attendance-note')await note(id);
@@ -607,6 +631,7 @@ function wire(){
  });
  $('adminContent').addEventListener('change',async e=>{
   const n=e.target.dataset.control;if(!n)return;
+  if(n==='publicSubject'){s.publicSubjectFilter=e.target.value;setView('worksheets');}
   if(n==='classId'){s.classId=e.target.value;s.currentAssessment=null;if(s.tab==='attendance')renderAttendance();else renderAssessments();}
   if(n==='attDate'){s.attDate=e.target.value||isoLocal(new Date());await loadAttendance();}
   if(n==='studentClass'){s.studentClass=e.target.value;renderStudents();}
