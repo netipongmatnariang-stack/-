@@ -8,9 +8,16 @@ const S={user:null,account:null,student:null,tab:'courses',sections:[],subjects:
 const subj=id=>S.subjects.find(s=>s.id===id)?.name||'รายวิชา';
 const sectionName=cs=>subj(cs.subject_id)+' · '+(S.terms.find(t=>t.id===cs.term_id)?.term_name||'ภาคเรียน');
 async function get(table,query=null){
- let r=db.from(table).select('*');
- if(query)r=query(r);
- const {data,error}=await r.limit(1000);if(error)throw error;return data||[];
+ const out=[];
+ const sortKey=table==='assignment_reviews'?'submission_id':'id';
+ for(let start=0;start<50000;start+=500){
+  let r=db.from(table).select('*').order(sortKey);
+  if(query)r=query(r);
+  const {data,error}=await r.range(start,start+499);
+  if(error)throw error;
+  out.push(...(data||[]));if((data||[]).length<500)return out;
+ }
+ throw Error('ข้อมูลจำนวนมากเกินขอบเขต กรุณาติดต่อครูผู้ดูแล');
 }
 function notice(s,err=false){$('status').textContent=s;$('status').className=err?'err':'success';$('status').hidden=false;}
 async function init(){
