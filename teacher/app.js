@@ -342,6 +342,56 @@ function renderWorksheetManager(){
  '<div class="info-callout">รองรับ PDF, PNG, JPG และ DOCX ขนาดไม่เกิน 10 MB หรือระบุลิงก์ HTTPS ไฟล์ที่เผยแพร่จะเปิดได้สาธารณะ จึงไม่ควรอัปโหลดข้อมูลส่วนตัวของนักเรียน</div>'+
  (rows||empty('ยังไม่มีใบงาน','กดเพิ่มใบงานเพื่ออัปโหลดไฟล์หรือแนบลิงก์'))+'</div>';
 }
+function renderSubjectManager(){
+ if(!admin())return;
+ const items=s.subjects.map(x=>{
+  const worksheets=s.worksheets.filter(w=>w.subject_id===x.id).length;
+  const assessments=s.assessments.filter(a=>a.subject_id===x.id).length;
+  return '<div class="card-management"><div><h3>'+h(x.name)+'</h3><p>'+
+   (x.subject_code?h(x.subject_code)+' · ':'')+h(x.description||'ไม่มีคำอธิบาย')+'</p>'+
+   '<p class="muted">ใบงาน '+fmt(worksheets)+' รายการ · แบบประเมิน '+fmt(assessments)+' รายการ · '+
+   (x.is_active?'แสดงบนเว็บไซต์':'ซ่อนจากเว็บไซต์')+'</p></div><div class="row-actions">'+
+   smallButton('edit-subject','แก้ไข','outline','data-id="'+h(x.id)+'"')+
+   smallButton('delete-subject','ลบ','danger','data-id="'+h(x.id)+'"')+
+   '</div></div>';
+ }).join('');
+ $('adminContent').innerHTML='<div class="admin-panel"><div class="panel-head"><h2>จัดการรายวิชา</h2>'+
+ smallButton('new-subject','+ เพิ่มรายวิชา','primary')+'</div>'+
+ '<div class="info-callout">เพิ่มรายวิชา เช่น คณิตศาสตร์ ภาษาไทย ภาษาอังกฤษ วิทยาศาสตร์ หรือศิลปะ แล้วเลือกใช้ในใบงานและกิจกรรมประเมินได้ทันที</div>'+
+ (items||empty('ยังไม่มีรายวิชา','กดเพิ่มรายวิชาเพื่อเริ่มต้น'))+'</div>';
+}
+function subjectModal(id){
+ if(!admin())return;
+ const old=s.subjects.find(x=>x.id===id);
+ modal(old?'แก้ไขรายวิชา':'เพิ่มรายวิชา',
+  inputField('name','ชื่อรายวิชา',old?.name||'','text',true,'maxlength="150"')+
+  inputField('subject_code','รหัสวิชา (ถ้ามี)',old?.subject_code||'','text',false,'maxlength="40"')+
+  textareaField('description','คำอธิบายรายวิชา',old?.description||'','maxlength="1500"')+
+  inputField('sort_order','ลำดับแสดงผล',old?.sort_order??0,'number',true,'min="0" max="100000" step="1"')+
+  checkboxField('is_active','แสดงรายวิชาบนเว็บไซต์',old?.is_active??true),async form=>{
+   const name=String(form.get('name')||'').trim(),code=String(form.get('subject_code')||'').trim();
+   const description=String(form.get('description')||'').trim(),order=Number(form.get('sort_order'));
+   if(!name||name.length>150||code.length>40||description.length>1500)throw Error('กรุณากรอกข้อมูลรายวิชาให้ถูกต้อง');
+   if(!Number.isInteger(order)||order<0||order>100000)throw Error('ลำดับแสดงผลต้องเป็นจำนวนเต็มระหว่าง 0–100000');
+   const val={name,subject_code:code,description,sort_order:order,is_active:form.get('is_active')==='on'};
+   const {error}=await (old?db.from('teacher_subjects').update(val).eq('id',old.id):db.from('teacher_subjects').insert(val));
+   if(error)throw error.code==='23505'?new Error('ชื่อรายวิชานี้มีอยู่แล้ว'):error;
+   await Promise.all([refreshProtected(),refreshPublic()]);
+   renderSubjectManager();
+  });
+}
+async function deleteSubject(id){
+ if(!admin())return;
+ const x=s.subjects.find(a=>a.id===id);if(!x)return;
+ const count=s.worksheets.filter(w=>w.subject_id===id).length+s.assessments.filter(a=>a.subject_id===id).length;
+ if(!confirm('ลบรายวิชา “'+x.name+'” ใช่หรือไม่?'+(count?'\nมีใบงานหรือแบบประเมินที่ผูกอยู่ '+count+' รายการ ซึ่งจะยังอยู่แต่ไม่ถูกจัดอยู่ในวิชานี้':'')))return;
+ await transact(async()=>{
+  const {error}=await db.from('teacher_subjects').delete().eq('id',id);
+  if(error)throw error;
+  await Promise.all([refreshProtected(),refreshPublic()]);
+  renderSubjectManager();
+ },'ลบรายวิชาเรียบร้อย');
+}
 function renderAnnouncementManager(){
  if(!admin())return;
  const items=s.announcements.map(a=>'<div class="card-management"><div><h3>'+h(a.title)+'</h3><p>'+h(a.body).slice(0,130)+' · '+(a.is_published?'เผยแพร่':'ฉบับร่าง')+'</p></div><div class="row-actions">'+
