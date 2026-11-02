@@ -1,0 +1,38 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ผลงานและกิจกรรม | Teacher Smart Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>*{box-sizing:border-box}body{margin:0;font-family:Prompt,sans-serif;background:#f3f8ff;color:#15375c}
+header{color:#fff;background:linear-gradient(110deg,#081e4a,#095ea8 70%,#10a3cc);padding:60px max(18px,calc((100vw - 1150px)/2))}
+header h1{font-size:34px;margin:12px 0}header p{color:#dbeeff}header a{color:white;text-decoration:none}
+main{max-width:1150px;margin:30px auto 85px;padding:0 18px}.filters{display:flex;gap:8px;flex-wrap:wrap;margin:25px 0}
+.filters button{font:inherit;font-size:12px;cursor:pointer;border:1px solid #cee0f4;border-radius:30px;padding:8px 15px;color:#18578f;background:#fff}
+.filters button.active{color:#fff;background:#0a65b2}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:19px}
+.card{background:white;border:1px solid #dce9f6;border-radius:17px;overflow:hidden;box-shadow:0 5px 30px #0b4d8a12}
+.picture{background:linear-gradient(145deg,#dceaff,#b2deec);height:165px;display:grid;place-items:center;font-size:55px;color:#4a79b2}.picture img{height:100%;width:100%;object-fit:cover}
+.content{padding:18px}.content h2{font-size:16px;margin:10px 0}.content p{font-size:12px;color:#55718d}.pill{font-size:11px;color:#2066a0;background:#eaf4ff;padding:4px 9px;border-radius:20px}
+.content a{color:#126bb9;text-decoration:none;font-size:12px;font-weight:600}.empty{background:#fff;border:1px dashed #b6d3ef;padding:30px;border-radius:14px;text-align:center}</style>
+<script src="./config.js"></script></head><body>
+<header><a href="./">← กลับเว็บไซต์ห้องเรียนดิจิทัล</a><h1>ผลงานและกิจกรรมของครู</h1><p>รวมเกียรติบัตร งานวิจัย นวัตกรรม ภาพกิจกรรม และสื่อวิดีโอที่ได้รับอนุญาตให้เผยแพร่</p></header>
+<main><div id="filters" class="filters"></div><div id="cards" class="grid"><div class="empty">กำลังโหลดรายการผลงาน...</div></div></main>
+<script type="module">
+import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.57.0';
+const c=window.APP_CONFIG,db=createClient(c.supabaseUrl,c.publishableKey),$=id=>document.getElementById(id);
+const h=x=>String(x??'').replace(/[&<>"']/g,v=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[v]));
+const safe=x=>{try{const u=new URL(x);return u.protocol==='https:'?h(u.href):'#'}catch{return '#'}};
+const cats={all:'ทั้งหมด',photo:'ภาพกิจกรรม',video:'วิดีโอ',certificate:'เกียรติบัตร',award:'รางวัล',research:'งานวิจัย',innovation:'นวัตกรรม',training:'การอบรม',other:'อื่น ๆ'};
+let items=[],filter='all';
+function draw(){
+ $('filters').innerHTML=Object.entries(cats).filter(([k])=>k==='all'||items.some(x=>x.category===k)).map(([k,v])=>'<button type="button" data-cat="'+k+'" class="'+(filter===k?'active':'')+'">'+v+'</button>').join('');
+ const rows=filter==='all'?items:items.filter(x=>x.category===filter);
+ $('cards').innerHTML=rows.length?rows.map(x=>
+ '<article class="card"><div class="picture">'+(safe(x.image_url)!=='#'?'<img loading="lazy" src="'+safe(x.image_url)+'" alt="'+h(x.title)+'">':'✳')+'</div>'+
+ '<div class="content"><span class="pill">'+h(cats[x.category]||'ผลงาน')+'</span><h2>'+h(x.title)+'</h2><p>'+h(x.description)+'</p>'+
+ (x.event_date?'<p>วันที่ '+h(new Intl.DateTimeFormat('th-TH',{dateStyle:'medium'}).format(new Date(x.event_date+'T12:00:00+07:00')))+'</p>':'')+
+ (safe(x.link_url)!=='#'?'<a href="'+safe(x.link_url)+'" target="_blank" rel="noopener noreferrer">เปิดดูรายละเอียด ↗</a>':'')+'</div></article>').join('')
+ :'<div class="empty">ยังไม่มีผลงานที่เผยแพร่ในหมวดนี้</div>';
+}
+$('filters').addEventListener('click',e=>{const b=e.target.closest('[data-cat]');if(!b)return;filter=b.dataset.cat;draw();});
+(async()=>{try{const {data,error}=await db.from('teacher_portfolio').select('id,category,title,description,event_date,image_url,link_url').eq('is_published',true).order('created_at',{ascending:false});
+ if(error)throw error;items=data||[];draw();}
+ catch(e){$('cards').innerHTML='<div class="empty">โหลดผลงานไม่ได้: '+h(e.message||e)+'</div>';}})();
+</script></body></html>
