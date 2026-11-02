@@ -111,7 +111,7 @@ function itemModal(id){
  '<label>หมวดคะแนน<select name="category_id" required>'+opts(cs,x.category_id||cs[0].id)+'</select></label>'+
  formInput('title','ชื่อรายการคะแนน',x.title||'','text','maxlength="200" required')+
  formInput('max_score','คะแนนเต็ม',x.max_score??10,'number','min="0.01" max="10000" step="0.01" required')+
- '<label>เชื่อมกับงานที่มอบหมาย<select name="task_id"><option value="">ไม่เชื่อม</option>'+opts(related,x.task_id)+'</select></label>'+
+ '<label>เชื่อมกับงานที่มอบหมาย<select name="task_id"><option value="">ไม่เชื่อม</option>'+opts(related.map(x=>({...x,name:x.title})),x.task_id)+'</select></label>'+
  '<label><input type="checkbox" name="is_published" '+(x.is_published?'checked':'')+'> เผยแพร่คะแนนนี้ให้เจ้าของบัญชีนักเรียนเห็น</label>',async form=>{
   const value={category_id:form.get('category_id'),title:String(form.get('title')||'').trim(),
    max_score:Number(form.get('max_score')),task_id:form.get('task_id')||null,is_published:form.has('is_published')};
@@ -134,3 +134,5 @@ function scaleModal(){
   if(error)throw error;await refresh();redraw();
  });
 }
+
+export {db,$,h,state,refresh,redraw,msg,gradeEntry,result,cats,items,students,categoryModal,itemModal,scaleModal,getName,button};
