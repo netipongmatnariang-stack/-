@@ -39,9 +39,12 @@ else{
   }).catch(()=>msg('ตรวจสอบลิงก์ไม่สำเร็จ กรุณาขอลิงก์ใหม่',true));
 }
 $('requestForm').addEventListener('submit',async event=>{
-  event.preventDefault();if(!client)return;const form=event.currentTarget;loading(form,true);
+  event.preventDefault();if(!client)return;const form=event.currentTarget;
+  // Read the email BEFORE disabling controls: disabled fields are omitted from FormData.
+  const email=String(new FormData(form).get('email')||'').trim();
+  if(!email || !form.reportValidity())return msg('กรุณากรอกอีเมลบัญชีครูให้ถูกต้อง',true);
+  loading(form,true);
   try{
-    const email=String(new FormData(form).get('email')||'').trim();
     const {error}=await client.auth.resetPasswordForEmail(email,{redirectTo:'https://netipongmatnariang-stack.github.io/-/teacher/reset.html'});
     if(error)throw error;
     msg('หากอีเมลตรงกับบัญชีในระบบ จะมีลิงก์ส่งไปให้ โปรดตรวจสอบกล่องจดหมายและอีเมลขยะ');
