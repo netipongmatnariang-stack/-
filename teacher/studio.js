@@ -2,6 +2,7 @@ import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.57.0';
 const cfg=window.APP_CONFIG||{};
 const db=createClient(cfg.supabaseUrl,cfg.publishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
 const $=id=>document.getElementById(id);
+const TEACHER_HOME=new URL('./',document.querySelector('script[src$="config.js"]').src).href;
 const h=x=>String(x??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const today=()=>{
  const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Bangkok',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
@@ -58,7 +59,7 @@ function chooseCourse(){
  return '<div class="toolbar"><label>เลือกรายวิชาและห้องเรียน<select class="in" id="coursePicker">'+S.sections.map(x=>'<option value="'+h(x.id)+'"'+(x.id===S.courseId?' selected':'')+'>'+h(sectionLabel(x))+'</option>').join('')+'</select></label></div>';
 }
 function overview(){
- $('view').innerHTML='<div class="panel"><h2>ภาพรวม Teacher Smart Portal</h2>'+
+ $('view').innerHTML='<div class="panel"><h2>ภาพรวม NEX EDU · Teacher Smart Portal</h2>'+
  '<div class="cards">'+[
  ['รายวิชา/ห้องเรียน',S.sections.length],['นักเรียน',S.students.length],['แฟ้ม วPA',S.evidence.length],['รายการผลงาน',S.portfolio.length]
  ].map(x=>'<div class="card-mini"><span class="muted">'+x[0]+'</span><strong>'+x[1].toLocaleString('th-TH')+'</strong></div>').join('')+'</div>'+
@@ -514,7 +515,7 @@ async function init(){
  if(error)throw error;S.profile=profile;S.admin=profile.role==='admin';
  // Student accounts use their own dashboard, never the staff management panel.
  const {data:student}=await db.from('student_accounts').select('student_id').eq('user_id',S.user.id).maybeSingle();
- if(student&&!S.admin){location.replace('./student.html');return;}
+ if(student&&!S.admin){location.replace(TEACHER_HOME+'student.html');return;}
  $('who').textContent=profile.full_name||S.user.email;$('signOut').hidden=false;
  $('studioArea').hidden=false;
  if(!S.admin){$('tabs').querySelectorAll('[data-tab="pa"],[data-tab="portfolio"]').forEach(x=>x.hidden=true);}
@@ -549,7 +550,7 @@ $('editForm').addEventListener('submit',async e=>{
  finally{S.busy=false;$('saveEditor').disabled=false;}
 });
 $('cancelEditor').addEventListener('click',()=>{$('editor').close();S.save=null;});
-$('signOut').addEventListener('click',async()=>{await db.auth.signOut();location.href='./';});
+$('signOut').addEventListener('click',async()=>{await db.auth.signOut();location.href=TEACHER_HOME;});
 $('loginForm').addEventListener('submit',async e=>{
  e.preventDefault();const f=new FormData(e.target);
  const {error}=await db.auth.signInWithPassword({email:String(f.get('email')).trim(),password:String(f.get('password'))});
