@@ -60,8 +60,9 @@ async function refreshPublic(){
  $('brandTitle').textContent=s.site.site_title;
 }
 function worksheetLink(w){
+ if(w.external_url)return safeUrl(w.external_url);
  if(w.file_path){const {data}=db.storage.from('teacher-worksheets').getPublicUrl(w.file_path);return safeUrl(data.publicUrl);}
- return safeUrl(w.external_url);
+ return '#';
 }
 function worksheetCard(w){
  const url=worksheetLink(w);
@@ -411,7 +412,7 @@ function worksheetModal(id){
    const val={
     title:String(f.get('title')).trim(),description:String(f.get('description')).trim(),
     subject:String(f.get('subject')).trim(),grade_label:String(f.get('grade_label')).trim(),
-    external_url:external||null,file_path:path,is_published:f.get('is_published')==='on'
+    external_url:hasFile?null:(external||null),file_path:path,is_published:f.get('is_published')==='on'
    };
    if(!val.title)throw Error('กรอกชื่อใบงาน');
    try{
