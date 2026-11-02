@@ -4,7 +4,7 @@ const $=id=>document.getElementById(id);
 const h=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const dt=x=>x?new Intl.DateTimeFormat('th-TH',{dateStyle:'medium',timeZone:'Asia/Bangkok'}).format(new Date(String(x).slice(0,10)+'T12:00:00+07:00')):'ไม่กำหนด';
 const link=v=>{try{const u=new URL(v);return u.protocol==='https:'?h(u.href):'#'}catch{return '#'}};
-const S={user:null,account:null,student:null,tab:'courses',sections:[],subjects:[],terms:[],sessions:[],attendance:[],tasks:[],submissions:[],reviews:[],assessments:[],scores:[],units:[]};
+const S={user:null,account:null,student:null,tab:'courses',sections:[],subjects:[],terms:[],sessions:[],attendance:[],tasks:[],submissions:[],reviews:[],assessments:[],scores:[],units:[],gradeCats:[],gradeItems:[],gradeEntries:[],gradeScales:[]};
 const subj=id=>S.subjects.find(s=>s.id===id)?.name||'รายวิชา';
 const sectionName=cs=>subj(cs.subject_id)+' · '+(S.terms.find(t=>t.id===cs.term_id)?.term_name||'ภาคเรียน');
 async function get(table,query=null){
@@ -38,7 +38,7 @@ async function init(){
  }catch(err){$('loginPanel').hidden=false;$('loginError').textContent='เปิดระบบนักเรียนไม่ได้: '+(err.message||err);$('loginError').hidden=false;}
 }
 async function refresh(){
- [S.sections,S.subjects,S.terms,S.sessions,S.attendance,S.tasks,S.submissions,S.reviews,S.assessments,S.scores,S.units]=await Promise.all([
+ [S.sections,S.subjects,S.terms,S.sessions,S.attendance,S.tasks,S.submissions,S.reviews,S.assessments,S.scores,S.units,S.gradeCats,S.gradeItems,S.gradeEntries,S.gradeScales]=await Promise.all([
  get('course_sections',q=>q.eq('is_published',true)),
  get('teacher_subjects',q=>q.eq('is_active',true)),
  get('academic_terms'),
@@ -49,7 +49,10 @@ async function refresh(){
  get('assignment_reviews'),
  get('assessments',q=>q.eq('class_id',S.account.class_id)),
  get('assessment_scores',q=>q.eq('student_id',S.account.student_id)),
- get('course_units',q=>q.eq('is_published',true))
+ get('course_units',q=>q.eq('is_published',true)),
+ get('grade_categories'),get('grade_items',q=>q.eq('is_published',true)),
+ get('grade_entries',q=>q.eq('student_id',S.account.student_id)),
+ get('grade_scales')
  ]);
  S.sections=S.sections.filter(x=>x.class_id===S.account.class_id);
 }
@@ -91,13 +94,48 @@ function assignmentsPage(){
 }
 function scoresPage(){
  const assessments=S.assessments.filter(x=>S.sections.some(cs=>cs.class_id===x.class_id));
- $('content').innerHTML='<section class="panel"><h2>สมุดคะแนนของฉัน</h2><p class="muted">คะแนนนี้เป็นข้อมูลส่วนตัวของผู้เรียน ไม่เปิดเผยต่อบุคคลทั่วไป</p>'+
- '<div class="scroll"><table class="tbl"><thead><tr><th>วิชา</th><th>รายการประเมิน</th><th>วันที่</th><th>คะแนน</th></tr></thead><tbody>'+
- assessments.map(a=>{
- const score=S.scores.find(s=>s.assessment_id===a.id);
- return '<tr><td>'+h(subj(a.subject_id))+'</td><td>'+h(a.title)+'</td><td>'+dt(a.assessment_date)+'</td><td><strong>'+h(score?.score??'ยังไม่บันทึก')+'</strong> / '+h(a.max_score)+'</td></tr>';
- }).join('')+'</tbody></table></div>'+
- (assessments.length?'':'<p class="muted">ยังไม่มีผลประเมินที่บันทึก</p>')+'</section>';
+ const publishedItems=S.gradeItems.filter(item=>S.gradeCats.some(c=>c.id===item.category_id&&S.sections.some(s=>s.id===c.section_id)));
+ const newGrades=publishedItems.map(item=>{
+  const cat=S.gradeCats.find(c=>c.id===item.category_id);
+  const section=S.sections.find(x=>x.id===cat?.section_id);
+  const entry=S.gradeEntries.find(e=>e.item_id===item.id&&e.student_id===S.account.student_id);
+  return '<tr><td>'+h(section?sectionName(section):'รายวิชา')+'</td><td>'+h(cat?.name||'')+' · '+h(item.title)+'</td>'+
+  '<td>'+h(entry?.score??'ยังไม่บันทึก')+' / '+h(item.max_score)+'</td><td><span class="status">ครูเผยแพร่</span></td></tr>';
+ }).join('');
+ const oldGrades=assessments.map(a=>{
+  const score=S.scores.find(s=>s.assessment_id===a.id);
+  return '<tr><td>'+h(subj(a.subject_id))+'</td><td>'+h(a.title)+'</td><td>'+
+   h(score?.score??'ยังไม่บันทึก')+' / '+h(a.max_score)+'</td><td><span class="status">ผลประเมินเดิม</span></td></tr>';
+ }).join('');
+ const percentages=S.sections.map(section=>{
+  const categories=S.gradeCats.filter(c=>c.section_id===section.id);
+  const all=S.gradeItems.filter(it=>categories.some(c=>c.id===it.category_id));
+  const weight=categories.reduce((n,c)=>n+Number(c.weight),0);
+  let earned=0,partial=false;
+  for(const cat of categories){
+   const list=all.filter(item=>item.category_id===cat.id);
+   if(!list.length&&Number(cat.weight)>0)partial=true;
+   let got=0,full=0;
+   for(const item of list){
+    full+=Number(item.max_score);
+    const score=S.gradeEntries.find(e=>e.item_id===item.id);
+    if(score?.score===undefined||score?.score===null)partial=true;
+    else got+=Number(score.score);
+   }
+   if(full>0)earned+=Number(cat.weight)*got/full;
+  }
+  const ready=categories.length>0&&all.length>0&&Math.abs(weight-100)<0.005&&!partial;
+  return '<article class="card"><h3>'+h(sectionName(section))+'</h3>'+
+  '<p class="muted">คะแนนจากรายการที่ครูเผยแพร่เท่านั้น</p>'+
+  '<strong>'+earned.toFixed(2)+'%'+(ready?'':' (ระหว่างเรียน)')+'</strong>'+
+  '<p class="muted">'+(ready?'รายการคะแนนที่เผยแพร่บันทึกครบแล้ว':'ยังอาจมีรายการคะแนนที่ครูไม่เผยแพร่ หรือรายการที่ยังไม่บันทึก')+'</p></article>';
+ }).join('');
+ $('content').innerHTML='<section class="panel"><h2>คะแนนของฉัน</h2><p class="muted">คะแนนนี้เห็นได้เฉพาะบัญชีนักเรียนเจ้าของข้อมูล รายการใดที่ครูยังไม่เผยแพร่จะไม่ปรากฏ</p>'+
+ (S.sections.length?'<div class="cards">'+percentages+'</div>':'')+
+ '<div class="scroll"><table class="tbl"><thead><tr><th>รายวิชา</th><th>รายการประเมิน</th><th>คะแนน</th><th>ประเภท</th></tr></thead><tbody>'+
+ newGrades+oldGrades+'</tbody></table></div>'+
+ (!publishedItems.length&&!assessments.length?'<p class="muted">ยังไม่มีรายการคะแนนที่ครูเผยแพร่</p>':'')+
+ '<p class="muted">หมายเหตุ: คะแนนระหว่างเรียนอาจไม่ตรงกับผลการเรียนสุดท้าย หากยังมีคะแนนหรือรายการที่ครูไม่ได้เผยแพร่</p></section>';
 }
 function draw(){
  $('tabs').querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===S.tab));
