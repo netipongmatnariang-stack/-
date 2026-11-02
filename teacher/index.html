@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b2657">
+<meta name="description" content="ห้องเรียนดิจิทัล ครูเนติพงษ์ มาตนาเรียง โรงเรียนบ้านหินลาด สื่อการเรียนรู้ ใบงาน เช็คชื่อ และประเมินผล">
+<title>ห้องเรียนดิจิทัล | ครูเนติพงษ์</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./style.css">
+<script src="./config.js"></script>
+<script type="module" src="./app.js"></script>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="site-header">
+    <a href="#home" class="brand" id="brandLink" aria-label="หน้าแรก">
+      <span class="brand-icon">✳</span>
+      <span><strong id="brandTitle">ห้องเรียนดิจิทัล</strong><small>โรงเรียนบ้านหินลาด</small></span>
+    </a>
+    <nav id="publicNav" class="nav-links" aria-label="เมนูหลัก">
+      <button type="button" data-view="home" class="nav-btn active">หน้าแรก</button>
+      <button type="button" data-view="worksheets" class="nav-btn">คลังใบงาน</button>
+      <button type="button" data-view="announcements" class="nav-btn">ข่าวสาร</button>
+      <button type="button" data-view="about" class="nav-btn">เกี่ยวกับครู</button>
+    </nav>
+    <div class="header-right">
+      <span class="db-dot" title="เชื่อมต่อฐานข้อมูลกลาง"></span>
+      <button type="button" id="authButton" class="button button-primary">เข้าสู่ระบบครู</button>
+      <button type="button" id="mobileMenuBtn" class="button button-outline mobile-menu" aria-label="เปิดเมนู">☰</button>
+    </div>
+  </header>
+
+  <div id="alertBanner" class="alert-banner" hidden></div>
+
+  <main id="publicArea">
+    <section id="publicContent"></section>
+  </main>
+
+  <section id="authArea" class="auth-area" hidden>
+    <div class="login-card">
+      <div class="login-art">✳</div>
+      <span class="eyebrow">TEACHER ACCESS</span>
+      <h1>เข้าสู่ระบบหลังบ้าน</h1>
+      <p class="muted">สำหรับครูและผู้ดูแลระบบโรงเรียนบ้านหินลาดเท่านั้น</p>
+      <form id="loginForm">
+        <label>อีเมลบัญชีครู<input type="email" name="email" autocomplete="username" required placeholder="teacher@school.ac.th"></label>
+        <label>รหัสผ่าน<input type="password" name="password" autocomplete="current-password" required placeholder="รหัสผ่าน"></label>
+        <p id="loginError" class="text-error" role="alert"></p>
+        <button class="button button-primary button-wide" type="submit">เข้าสู่ระบบ</button>
+      </form>
+      <p class="login-hint">ไม่มีระบบสมัครสมาชิกสาธารณะ กรุณาติดต่อผู้ดูแลเพื่อเปิดบัญชีครู</p>
+      <button type="button" class="link-button" data-view="home">← กลับหน้าแรก</button>
+    </div>
+  </section>
+
+  <section id="dashboardArea" class="dashboard-layout" hidden>
+    <aside class="sidebar" id="sidebar">
+      <p class="sidebar-caption">TEACHER WORKSPACE</p>
+      <div class="user-card">
+        <div class="avatar">ครู</div>
+        <div><strong id="profileName">คุณครู</strong><span id="profileRole">ครูผู้สอน</span></div>
+      </div>
+      <div class="sidebar-divider"></div>
+      <nav class="side-links" aria-label="ระบบหลังบ้าน">
+        <button type="button" data-admin-view="overview" class="side-btn active"><span>▤</span> ภาพรวม</button>
+        <button type="button" data-admin-view="attendance" class="side-btn"><span>✓</span> เช็คชื่อนักเรียน</button>
+        <button type="button" data-admin-view="students" class="side-btn"><span>♙</span> รายชื่อนักเรียน</button>
+        <button type="button" data-admin-view="assessments" class="side-btn"><span>◈</span> ประเมินและบันทึกคะแนน</button>
+        <button type="button" data-admin-view="worksheets" class="side-btn admin-only" hidden><span>▣</span> จัดการใบงาน</button>
+        <button type="button" data-admin-view="announcements" class="side-btn admin-only" hidden><span>☷</span> จัดการประกาศ</button>
+        <button type="button" data-admin-view="settings" class="side-btn admin-only" hidden><span>⚙</span> ตั้งค่าเว็บไซต์</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <span>☁ เชื่อมต่อ Supabase</span>
+        <a href="../online/" rel="noopener" class="subtle-link">ระบบจัดการชั้นเรียนเดิม ↗</a>
+      </div>
+    </aside>
+    <div class="admin-main">
+      <div class="admin-bar">
+        <div><span class="eyebrow">DASHBOARD</span><h1 id="adminTitle">ภาพรวม</h1></div>
+        <div class="admin-bar-right"><span id="adminDate" class="muted"></span><button class="button button-outline" id="logoutBtn" type="button">ออกจากระบบ</button></div>
+      </div>
+      <div id="adminContent"></div>
+    </div>
+  </section>
+
+  <footer id="footer" class="site-footer">
+    <div class="footer-inner"><div><div class="footer-brand">✳ ห้องเรียนดิจิทัล</div><p>โรงเรียนบ้านหินลาด · สำนักงานเขตพื้นที่การศึกษาประถมศึกษามหาสารคาม เขต 1</p></div><span>สร้างเพื่อการเรียนรู้และพัฒนาศักยภาพผู้เรียน</span></div>
+  </footer>
+</div>
+<dialog id="editModal" class="edit-modal"><form id="editForm" method="dialog">
+  <div class="modal-head"><h2 id="modalTitle"></h2><button type="button" class="icon-button" id="closeModal" aria-label="ปิด">✕</button></div>
+  <div id="modalFields" class="modal-fields"></div>
+  <p id="modalError" class="text-error" aria-live="polite"></p>
+  <div class="modal-actions"><button type="button" class="button button-outline" id="cancelModal">ยกเลิก</button><button type="submit" class="button button-primary" id="saveModal">บันทึกข้อมูล</button></div>
+</form></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>
