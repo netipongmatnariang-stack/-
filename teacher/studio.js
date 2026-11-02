@@ -300,7 +300,8 @@ function paPage(){
  '<div class="panel">'+head('รายการหลักฐาน')+
  (S.evidence.filter(e=>e.cycle_id===cycle?.id).length?S.evidence.filter(e=>e.cycle_id===cycle?.id).map(e=>item(e.title,
  (S.indicators.find(i=>i.id===e.indicator_id)?.code||'ทั่วไป')+' · '+dateTH(e.evidence_date)+' · '+e.description,
- (e.evidence_url?'<a class="act" target="_blank" rel="noopener noreferrer" href="'+safeLink(e.evidence_url)+'">เปิดหลักฐาน</a>':'')+
+ (e.evidence_url?'<a class="act" target="_blank" rel="noopener noreferrer" href="'+safeLink(e.evidence_url)+'">เปิดลิงก์หลักฐาน</a>':'')+
+ (e.file_path?btn('open-pa-file','เปิดไฟล์ส่วนตัว',e.id):'')+
  btn('edit-evidence','แก้ไข',e.id)+btn('delete-evidence','ลบ',e.id,'danger'))).join(''):'<p class="muted">ยังไม่มีหลักฐาน</p>')+'</div>';
 }
 function paCycleModal(id){
@@ -324,9 +325,20 @@ function evidenceModal(id,indicatorId){
  option('title','ชื่อหลักฐาน',x.title||'','text','maxlength="250" required')+
  area('description','คำอธิบาย/ผลลัพธ์',x.description||'')+
  option('evidence_url','ลิงก์หลักฐาน HTTPS',x.evidence_url||'','url')+
+ '<label>หรืออัปโหลดไฟล์หลักฐานส่วนตัว (PDF, DOCX, JPG, PNG, WEBP ≤10 MB)<input class="in" type="file" name="evidence_file" accept=".pdf,.docx,.jpg,.jpeg,.png,.webp"></label>'+
  option('evidence_date','วันที่หลักฐาน',x.evidence_date||today(),'date','required'),async f=>{
- await write('pa_evidence',{cycle_id:cycle.id,indicator_id:f.get('indicator_id'),title:String(f.get('title')||'').trim(),
- description:String(f.get('description')||''),evidence_url:String(f.get('evidence_url')||''),evidence_date:f.get('evidence_date')},id);
+ const file=f.get('evidence_file'),validFile=file instanceof File&&file.size>0;
+ let file_path=x.file_path||'',newPath='';
+ if(validFile){
+  const ext={'application/pdf':'pdf','image/jpeg':'jpg','image/png':'png','image/webp':'webp','application/vnd.openxmlformats-officedocument.wordprocessingml.document':'docx'};
+  if(!ext[file.type]||file.size>10*1024*1024)throw Error('ไฟล์หลักฐานต้องเป็น PDF DOCX JPG PNG หรือ WEBP ขนาดไม่เกิน 10 MB');
+  newPath='evidence/'+crypto.randomUUID()+'.'+ext[file.type];
+  const {error}=await db.storage.from('teacher-pa-files').upload(newPath,file,{upsert:false,contentType:file.type});if(error)throw error;
+  file_path=newPath;
+ }
+ try{await write('pa_evidence',{cycle_id:cycle.id,indicator_id:f.get('indicator_id'),title:String(f.get('title')||'').trim(),
+ description:String(f.get('description')||''),evidence_url:String(f.get('evidence_url')||''),file_path,evidence_date:f.get('evidence_date')},id);}
+ catch(err){if(newPath)await db.storage.from('teacher-pa-files').remove([newPath]);throw err;}
  await loadAll();draw();
  });
 }
@@ -350,11 +362,23 @@ function portfolioModal(id){
  area('description','รายละเอียดและหน่วยงานที่มอบ',x.description||'')+
  option('event_date','วันที่ผลงาน',x.event_date||today(),'date')+
  option('image_url','ลิงก์ภาพหน้าปก HTTPS',x.image_url||'','url')+
+ '<label>หรืออัปโหลดภาพหน้าปก (JPG, PNG, WEBP ≤10 MB)<input class="in" type="file" name="cover_file" accept=".jpg,.jpeg,.png,.webp"></label>'+
  option('link_url','ลิงก์รายละเอียด YouTube / Google Drive / PDF',x.link_url||'','url')+
  tick('is_published','เผยแพร่ให้ผู้เยี่ยมชมเห็น',x.is_published),async f=>{
  const urls=['image_url','link_url'];for(const k of urls){const u=String(f.get(k)||'');if(u&&!u.startsWith('https://'))throw Error('ลิงก์ต้องใช้ HTTPS');}
- await write('teacher_portfolio',{category:f.get('category'),title:String(f.get('title')).trim(),description:String(f.get('description')||''),
- event_date:f.get('event_date')||null,image_url:String(f.get('image_url')||''),link_url:String(f.get('link_url')||''),is_published:f.has('is_published')},id);
+ let image_url=String(f.get('image_url')||''),newPath='';
+ const file=f.get('cover_file'),hasFile=file instanceof File&&file.size>0;
+ if(hasFile){
+  const exts={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'};
+  if(!exts[file.type]||file.size>10*1024*1024)throw Error('รูปหน้าปกต้องเป็น JPG PNG หรือ WEBP และไม่เกิน 10 MB');
+  newPath='portfolio/'+crypto.randomUUID()+'.'+exts[file.type];
+  const {error}=await db.storage.from('teacher-gallery').upload(newPath,file,{contentType:file.type,upsert:false});
+  if(error)throw error;
+  image_url=db.storage.from('teacher-gallery').getPublicUrl(newPath).data.publicUrl;
+ }
+ try{await write('teacher_portfolio',{category:f.get('category'),title:String(f.get('title')).trim(),description:String(f.get('description')||''),
+ event_date:f.get('event_date')||null,image_url,link_url:String(f.get('link_url')||''),is_published:f.has('is_published')},id);}
+ catch(err){if(newPath)await db.storage.from('teacher-gallery').remove([newPath]);throw err;}
  await loadAll();draw();
  });
 }
@@ -424,6 +448,11 @@ async function runAction(action,id){
  if(action==='add-pa'||action==='edit-pa')return paCycleModal(id);
  if(action==='add-evidence'||action==='edit-evidence')return evidenceModal(id);
  if(action==='add-evidence-for')return evidenceModal(null,id);
+ if(action==='open-pa-file'){
+  const x=S.evidence.find(e=>e.id===id);if(!x?.file_path)return;
+  const {data,error}=await db.storage.from('teacher-pa-files').createSignedUrl(x.file_path,60);
+  if(error)throw error;window.open(data.signedUrl,'_blank','noopener,noreferrer');return;
+ }
  if(action==='delete-evidence'){if(confirm('ลบหลักฐานนี้?')){await del('pa_evidence',id);await loadAll();draw();}return;}
  if(action==='add-portfolio'||action==='edit-portfolio')return portfolioModal(id);
  if(action==='delete-portfolio'){if(confirm('ลบรายการผลงานนี้?')){await del('teacher_portfolio',id);await loadAll();draw();}return;}
