@@ -10,6 +10,20 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./style.css">
+<script>
+(function(){
+  // This page is not the password-reset handler. Forward email link credentials intact.
+  const hash=new URLSearchParams(location.hash.slice(1)),query=new URLSearchParams(location.search);
+  const recovery=hash.get('type')==='recovery'||query.get('type')==='recovery'||
+    hash.has('error')||query.has('error')||query.has('code')||query.has('token_hash');
+  if(recovery){
+    const target=new URL('./reset.html',location.href);
+    target.search=location.search;
+    target.hash=location.hash;
+    location.replace(target.href);
+  }
+})();
+</script>
 <script src="./config.js"></script>
 <script type="module" src="./app.js"></script>
 </head>
