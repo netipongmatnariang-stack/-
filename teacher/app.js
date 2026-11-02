@@ -688,9 +688,15 @@ function wire(){
   try{await db.auth.signOut();s.user=null;s.profile=null;s.students=[];s.classes=[];s.assessments=[];s.assessmentScores=[];s.attendance=[];setView('home');toast('ออกจากระบบแล้ว');}
   catch(e){toast(eMsg(e),true);}
  });
+ $('publicContent').addEventListener('change',e=>{
+  if(e.target.dataset.control==='publicSubject'){
+   const id=e.target.value;
+   s.publicSubjectFilter=id==='all'||s.publicSubjects.some(x=>x.id===id)?id:'all';
+   setView('worksheets');
+  }
+ });
  $('adminContent').addEventListener('change',async e=>{
   const n=e.target.dataset.control;if(!n)return;
-  if(n==='publicSubject'){s.publicSubjectFilter=e.target.value;setView('worksheets');}
   if(n==='classId'){s.classId=e.target.value;s.currentAssessment=null;if(s.tab==='attendance')renderAttendance();else renderAssessments();}
   if(n==='attDate'){s.attDate=e.target.value||isoLocal(new Date());await loadAttendance();}
   if(n==='studentClass'){s.studentClass=e.target.value;renderStudents();}
