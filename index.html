@@ -1,6 +1,17 @@
 <!doctype html>
 <html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="refresh" content="0;url=./teacher/">
+<script>
+(function(){
+  // Preserve auth-recovery fragments and query parameters when moving off the root page.
+  const hash=new URLSearchParams(location.hash.slice(1)),query=new URLSearchParams(location.search);
+  const recovering=hash.get('type')==='recovery'||query.get('type')==='recovery'||
+    hash.has('error')||query.has('error')||query.has('code')||query.has('token_hash');
+  const dest=new URL(recovering?'./teacher/reset.html':'./teacher/',location.href);
+  dest.search=location.search;
+  dest.hash=location.hash;
+  location.replace(dest.href);
+})();
+</script>
 <title>ห้องเรียนดิจิทัล | ครูเนติพงษ์</title>
 <style>body{font-family:system-ui,'Prompt',sans-serif;background:#eef6ff;color:#163c75;min-height:100vh;display:grid;place-items:center;text-align:center}.card{padding:40px;background:#fff;border-radius:24px;box-shadow:0 12px 42px #16467819}a{color:#155ecc}</style></head>
 <body><div class="card"><h1>ห้องเรียนดิจิทัล</h1><p>ครูเนติพงษ์ มาตนาเรียง · โรงเรียนบ้านหินลาด</p><p><a href="./teacher/">เปิดเว็บไซต์ห้องเรียนดิจิทัล</a></p><p><small><a href="./online/">ระบบเช็คชื่อนักเรียนเดิม</a></small></p></div></body></html>
