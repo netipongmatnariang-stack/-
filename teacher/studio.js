@@ -295,12 +295,10 @@ async function downloadSubmission(id){
  if(error)throw error;window.open(data.signedUrl,'_blank','noopener,noreferrer');
 }
 function gradesPage(){
- $('view').innerHTML='<div class="panel">'+head('สมุดคะแนนออนไลน์',btn('grade-csv','ส่งออก CSV'))+
- '<p class="tip">คะแนนจากกิจกรรมประเมินและการตรวจงานใช้ฐานข้อมูลเดียวกันกับเว็บไซต์หลัก โดยเมนูนี้แสดงผลสรุปจากข้อมูลจริง</p>'+
- '<p><a class="act primary" href="./">เปิดเว็บไซต์หลัก → เข้าสู่ระบบครู → ประเมินและบันทึกคะแนน</a></p>'+
- '<div class="table-scroll"><table class="data"><thead><tr><th>ชั้นเรียน</th><th>กิจกรรม</th><th>รายวิชา</th><th>คะแนนเต็ม</th></tr></thead><tbody>'+
- S.assessments.map(a=>'<tr><td>'+h(name(S.classes,a.class_id))+'</td><td>'+h(a.title)+'</td><td>'+h(name(S.subjects,a.subject_id))+'</td><td>'+a.max_score+'</td></tr>').join('')+'</tbody></table></div>'+
- '<p class="muted">คะแนนรายบุคคลดูได้จากระบบหลังบ้านเดิม โดยนักเรียนที่เชื่อมบัญชีเห็นเฉพาะคะแนนของตนเอง</p></div>';
+ $('view').innerHTML=chooseCourse()+'<section class="panel">'+head('สมุดคะแนนถ่วงน้ำหนัก')+
+ '<div class="info">สมุดคะแนนแบบใหม่รองรับหมวดคะแนน น้ำหนักรวม 100% เกณฑ์ตัดเกรด รายการคะแนนจากงาน ตรวจสอบประวัติการแก้ไข ส่งออก CSV และพิมพ์ PDF</div>'+
+ '<p><a class="act primary" href="./grades.html">เปิดสมุดคะแนนออนไลน์ →</a></p>'+
+ '<p class="muted">ใช้บัญชีครูหรือ Admin เดิม ระบบแยกสิทธิ์รายวิชาและข้อมูลส่วนตัวนักเรียนผ่าน Supabase</p></section>';
 }
 function paPage(){
  if(!S.admin){$('view').innerHTML='<div class="panel"><p class="error">เฉพาะ Admin เท่านั้นที่เข้าถึงแฟ้ม วPA ได้</p></div>';return;}
