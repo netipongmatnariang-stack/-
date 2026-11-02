@@ -1,4 +1,4 @@
-name: Deploy attendance website to GitHub Pages
+name: Deploy personal digital classroom to GitHub Pages
 
 on:
   push:
