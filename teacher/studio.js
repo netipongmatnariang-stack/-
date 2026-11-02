@@ -305,7 +305,7 @@ function paPage(){
  const cycle=S.paCycles.sort((a,b)=>b.fiscal_year-a.fiscal_year)[0];
  const counted=new Set(S.evidence.filter(e=>e.cycle_id===cycle?.id&&e.indicator_id).map(e=>e.indicator_id));
  const pc=cycle?Math.round(100*counted.size/Math.max(S.indicators.length,1)):0;
- $('view').innerHTML='<div class="panel">'+head('แฟ้มข้อตกลงในการพัฒนางาน (วPA)',btn('add-evidence','+ เพิ่มหลักฐาน','','primary'))+
+ $('view').innerHTML='<div class="panel">'+head('แฟ้มข้อตกลงในการพัฒนางาน (วPA)',btn('add-evidence','+ เพิ่มหลักฐาน','','primary')+btn('print-pa','พิมพ์ / บันทึก PDF'))+
  '<p class="muted">ข้อมูลส่วนนี้เป็นข้อมูลส่วนตัวของผู้ดูแล ยังไม่เปิดเผยแก่ผู้เยี่ยมชมเว็บไซต์</p>'+
  '<div class="toolbar">'+(cycle?'<span class="pill">ปีงบประมาณ พ.ศ. '+h(cycle.fiscal_year)+'</span>'+btn('edit-pa','แก้ไขประเด็นท้าทาย',cycle.id):btn('add-pa','+ เพิ่มปีงบประมาณ'))+
  btn('add-indicator','+ เพิ่มตัวชี้วัด')+'</div>'+
@@ -492,6 +492,7 @@ async function runAction(action,id){
   })],'สถานะส่งงาน.csv');
  }
  if(action==='grade-csv')return csv([['ชั้นเรียน','รายการประเมิน','คะแนนเต็ม'],...S.assessments.map(a=>[name(S.classes,a.class_id),a.title,a.max_score])],'รายการประเมิน.csv');
+ if(action==='print-pa')return window.print();
  if(action==='add-pa'||action==='edit-pa')return paCycleModal(id);
  if(action==='add-indicator'||action==='edit-indicator')return indicatorModal(id);
  if(action==='add-evidence'||action==='edit-evidence')return evidenceModal(id);
